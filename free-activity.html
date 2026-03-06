@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中午自由活動</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #ffd194 0%, #d1913c 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .main-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 700px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+
+        .stats {
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1em;
+            color: #333;
+        }
+
+        .stats span {
+            display: inline-block;
+            margin: 0 8px;
+            font-weight: bold;
+        }
+
+        .buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .train-button {
+            width: 100%;
+            padding: 14px;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .train-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+        }
+
+        .btn-cooking {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            color: #4a1c1c;
+        }
+
+        .btn-stamina {
+            background: linear-gradient(135deg, #a1ffce 0%, #faffd1 100%);
+            color: #1f4a2f;
+        }
+
+        .btn-charm {
+            background: linear-gradient(135deg, #b2fefa 0%, #0ed2f7 100%);
+            color: #064c5b;
+        }
+
+        .hint-text {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #777;
+        }
+
+        .event-box {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            font-size: 0.9em;
+            color: #444;
+            display: none;
+        }
+
+        .continue-button {
+            margin-top: 12px;
+            width: 100%;
+            padding: 12px;
+            font-size: 1em;
+            font-weight: bold;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+            display: none;
+        }
+
+        .continue-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1>中午自由活動</h1>
+        <div class="subtitle">選擇一項訓練提升男主角能力。每項能力訓練兩次會提升一個等級（C → B → A）。</div>
+
+        <div class="stats">
+            目前能力：
+            <span id="statCooking">廚藝：C</span>
+            <span id="statStamina">體力：C</span>
+            <span id="statCharm">魅力：C</span>
+        </div>
+
+        <div class="buttons">
+            <button id="trainCookingBtn" class="train-button btn-cooking">訓練廚藝</button>
+            <button id="trainStaminaBtn" class="train-button btn-stamina">健身（訓練體力）</button>
+            <button id="trainCharmBtn" class="train-button btn-charm">練舞（訓練魅力）</button>
+        </div>
+
+        <div class="hint-text">
+            選擇一項訓練後，可能在途中撞見某位女主角，她看到你努力的樣子時，好感度會稍微提升，之後才會進入下一個時段。
+        </div>
+
+        <div id="eventBox" class="event-box"></div>
+        <button id="continueButton" class="continue-button">繼續前往下一個時段</button>
+    </div>
+
+    <script>
+        const PLAYER_KEY = 'forbiddenShow_player';
+        const TRAIN_KEY = 'forbiddenShow_training';
+        const AFFECTION_KEY = 'forbiddenShow_affection';
+        const AFFECTION_TODAY_KEY = 'forbiddenShow_affection_today';
+
+        const HEROINES = {
+            '搖滾少女': { charm: 'A', cooking: 'C', stamina: 'C' },
+            '清純少女': { charm: 'C', cooking: 'A', stamina: 'C' },
+            '運動少女': { charm: 'C', cooking: 'C', stamina: 'A' },
+            '高冷大姐姐': { charm: 'B', cooking: 'A', stamina: 'C' },
+            '地雷女': { charm: 'A', cooking: 'C', stamina: 'B' }
+        };
+
+        function loadPlayer() {
+            try {
+                const raw = localStorage.getItem(PLAYER_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            return { cooking: 'C', stamina: 'C', charm: 'C' };
+        }
+
+        function savePlayer(state) {
+            localStorage.setItem(PLAYER_KEY, JSON.stringify(state));
+        }
+
+        function loadTraining() {
+            try {
+                const raw = localStorage.getItem(TRAIN_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            return { cooking: 0, stamina: 0, charm: 0 };
+        }
+
+        function saveTraining(state) {
+            localStorage.setItem(TRAIN_KEY, JSON.stringify(state));
+        }
+
+        function levelUp(level) {
+            if (level === 'C') return 'B';
+            if (level === 'B') return 'A';
+            return 'A';
+        }
+
+        function loadAffection() {
+            try {
+                const raw = localStorage.getItem(AFFECTION_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            const base = {};
+            const players = ['玩家', '暖男', '高冷男', '體育男'];
+            Object.keys(HEROINES).forEach(hero => {
+                base[hero] = {};
+                players.forEach(p => { base[hero][p] = 0; });
+            });
+            return base;
+        }
+
+        function saveAffection(state) {
+            localStorage.setItem(AFFECTION_KEY, JSON.stringify(state));
+        }
+
+        function loadAffectionToday() {
+            try {
+                const raw = localStorage.getItem(AFFECTION_TODAY_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            const base = {};
+            const players = ['玩家', '暖男', '高冷男', '體育男'];
+            Object.keys(HEROINES).forEach(hero => {
+                base[hero] = {};
+                players.forEach(p => { base[hero][p] = 0; });
+            });
+            return base;
+        }
+
+        function saveAffectionToday(state) {
+            localStorage.setItem(AFFECTION_TODAY_KEY, JSON.stringify(state));
+        }
+
+        function noonTrainAffectionDelta(attr, heroineName) {
+            // 基礎值比小遊戲略低，當作日常加分
+            const base = 2;
+            const h = HEROINES[heroineName];
+            if (!h) return base;
+            const bonusLevel = attr === 'cooking' ? h.cooking : attr === 'stamina' ? h.stamina : h.charm;
+            const mult = bonusLevel === 'A' ? 2 : bonusLevel === 'B' ? 1 : 0.5;
+            return Math.max(1, Math.round(base * mult));
+        }
+
+        function updateStatsDisplay(player) {
+            document.getElementById('statCooking').textContent = '廚藝：' + (player.cooking || 'C');
+            document.getElementById('statStamina').textContent = '體力：' + (player.stamina || 'C');
+            document.getElementById('statCharm').textContent = '魅力：' + (player.charm || 'C');
+        }
+
+        const continueButton = document.getElementById('continueButton');
+
+        function trainAttribute(attr) {
+            const player = loadPlayer();
+            const training = loadTraining();
+
+            training[attr] = (training[attr] || 0) + 1;
+
+            if (training[attr] >= 2) {
+                training[attr] -= 2;
+                player[attr] = levelUp(player[attr] || 'C');
+            }
+
+            saveTraining(training);
+            savePlayer(player);
+            updateStatsDisplay(player);
+
+            // 訓練後，隨機遇到一位女主角並提升好感度
+            const heroineNames = Object.keys(HEROINES);
+            const randomHeroine = heroineNames[Math.floor(Math.random() * heroineNames.length)];
+            const delta = noonTrainAffectionDelta(attr, randomHeroine);
+
+            const affection = loadAffection();
+            const today = loadAffectionToday();
+
+            if (!affection[randomHeroine]) affection[randomHeroine] = {};
+            if (typeof affection[randomHeroine]['玩家'] !== 'number') affection[randomHeroine]['玩家'] = 0;
+            affection[randomHeroine]['玩家'] += delta;
+
+            if (!today[randomHeroine]) today[randomHeroine] = {};
+            if (typeof today[randomHeroine]['玩家'] !== 'number') today[randomHeroine]['玩家'] = 0;
+            today[randomHeroine]['玩家'] += delta;
+
+            saveAffection(affection);
+            saveAffectionToday(today);
+
+            // 顯示事件文字，稍候再前進下一個時段
+            const eventBox = document.getElementById('eventBox');
+            const attrLabel = attr === 'cooking' ? '廚藝' : attr === 'stamina' ? '體力' : '魅力';
+            eventBox.textContent =
+                `你在專心訓練「${attrLabel}」時，剛好被「${randomHeroine}」看見。` +
+                `她對你認真努力的樣子留下了好印象，好感度上升了 ${delta} 點。`;
+            eventBox.style.display = 'block';
+
+            // 為避免連點，多個按鈕暫時失效
+            document.getElementById('trainCookingBtn').disabled = true;
+            document.getElementById('trainStaminaBtn').disabled = true;
+            document.getElementById('trainCharmBtn').disabled = true;
+
+            // 顯示「繼續」按鈕，由玩家自行決定何時前往下一個時段
+            continueButton.style.display = 'block';
+        }
+
+        // 初始化顯示
+        updateStatsDisplay(loadPlayer());
+
+        document.getElementById('trainCookingBtn').addEventListener('click', () => {
+            trainAttribute('cooking');
+        });
+
+        document.getElementById('trainStaminaBtn').addEventListener('click', () => {
+            trainAttribute('stamina');
+        });
+
+        document.getElementById('trainCharmBtn').addEventListener('click', () => {
+            trainAttribute('charm');
+        });
+
+        continueButton.addEventListener('click', () => {
+            window.location.href = './index.html?autoNext=1';
+        });
+    </script>
+</body>
+</html>
+

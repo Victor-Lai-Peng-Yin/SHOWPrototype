@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>禁忌的Show - 夜晚環節</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: radial-gradient(circle at top, #ffc857 0%, #2b2d42 45%, #1b1b2f 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #f8f9fa;
+        }
+
+        .main-container {
+            background: rgba(15, 18, 40, 0.95);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+            max-width: 760px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffe066;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #ced4da;
+            margin-bottom: 16px;
+            font-size: 0.95em;
+        }
+
+        .day-info {
+            text-align: center;
+            margin-bottom: 6px;
+            font-weight: bold;
+            color: #f8f9fa;
+        }
+
+        .card-info {
+            text-align: center;
+            margin-bottom: 18px;
+            color: #f1faee;
+            font-size: 0.95em;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.8em;
+            background: rgba(255, 224, 102, 0.15);
+            color: #ffe066;
+            border: 1px solid rgba(255, 224, 102, 0.5);
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .primary-button,
+        .secondary-button {
+            flex: 1;
+            min-width: 140px;
+            padding: 14px;
+            font-size: 1.05em;
+            font-weight: bold;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s, opacity 0.2s;
+        }
+
+        .primary-button {
+            color: #1b1b2f;
+            background: linear-gradient(135deg, #ffe066 0%, #ff9f1c 100%);
+            box-shadow: 0 10px 24px rgba(255, 210, 0, 0.45);
+        }
+
+        .primary-button:hover:enabled {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 30px rgba(255, 210, 0, 0.6);
+        }
+
+        .primary-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .secondary-button {
+            color: #f8f9fa;
+            background: linear-gradient(135deg, #4c6ef5 0%, #364fc7 100%);
+            box-shadow: 0 8px 20px rgba(76, 110, 245, 0.5);
+        }
+
+        .secondary-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 26px rgba(76, 110, 245, 0.7);
+        }
+
+        .section {
+            margin-top: 18px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .section-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #f8f9fa;
+        }
+
+        .heroine-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .heroine-card {
+            flex: 1;
+            min-width: 150px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: border 0.2s, background 0.2s, transform 0.15s;
+        }
+
+        .heroine-card:hover:not(:disabled) {
+            transform: translateY(-1px);
+            border-color: rgba(255, 224, 102, 0.6);
+        }
+
+        button.heroine-card {
+            font: inherit;
+            color: inherit;
+            text-align: left;
+        }
+
+        .heroine-card.selected {
+            border-color: rgba(255, 224, 102, 0.9);
+            background: radial-gradient(circle at top, rgba(255, 224, 102, 0.28), rgba(0, 0, 0, 0.2));
+        }
+
+        .heroine-radio {
+            width: 18px;
+            height: 18px;
+        }
+
+        .heroine-name {
+            font-weight: bold;
+            color: #f8f9fa;
+        }
+
+        .heroine-tags {
+            font-size: 0.75em;
+            color: #ced4da;
+        }
+
+        .location-text {
+            font-size: 0.9em;
+            color: #e9ecef;
+            margin-bottom: 4px;
+        }
+
+        .result-box {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(12, 178, 106, 0.08);
+            border: 1px solid rgba(12, 178, 106, 0.5);
+            color: #c3fae8;
+            font-size: 0.9em;
+            min-height: 32px;
+        }
+
+        .note-text {
+            margin-top: 8px;
+            font-size: 0.8em;
+            color: #adb5bd;
+        }
+
+        .back-link {
+            margin-top: 16px;
+            text-align: center;
+            font-size: 0.85em;
+        }
+
+        .back-link a {
+            color: #74c0fc;
+            text-decoration: none;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1>夜晚環節</h1>
+        <div class="subtitle">忙碌了一整天，是要安排約會加深感情，還是好好休息準備明天呢？</div>
+
+        <div class="day-info">今天是第 <span id="dayNumber">1</span> 天・目前時段：晚上</div>
+        <div class="card-info">
+            目前持有 <span id="dateCardCount">0</span> 張 <span class="badge">約會卡</span>
+        </div>
+
+        <div class="actions">
+            <button id="dateButton" class="primary-button">使用約會卡・安排約會</button>
+            <button id="chatButton" class="secondary-button">和女主角聊天</button>
+            <button id="restIntimateButton" class="secondary-button" style="display: none;">休息・親密劇情</button>
+            <button id="restButton" class="secondary-button">直接休息（結束今天）</button>
+        </div>
+
+        <div id="restIntimateSection" class="section" style="display: none;">
+            <div class="section-title">選擇要觀看親密劇情的女主角（好感度 50 以上）</div>
+            <div class="heroine-list" id="restIntimateHeroineList"></div>
+            <button type="button" id="goIntimateBtn" class="primary-button" style="margin-top: 10px;" disabled>進入親密劇情</button>
+            <button type="button" id="closeRestIntimateBtn" class="secondary-button" style="margin-top: 8px;">關閉</button>
+        </div>
+
+        <div id="chatSection" class="section" style="display: none;">
+            <div class="section-title">選擇要聊天的女主角（正在與競爭對手約會的女主角無法選擇）</div>
+            <div class="heroine-list" id="chatHeroineList"></div>
+            <div id="chatResultBox" class="result-box" style="margin-top: 8px;"></div>
+            <button type="button" id="chatNextPeriodBtn" class="primary-button" style="margin-top: 10px;">進入下一個時段</button>
+            <button type="button" id="closeChatBtn" class="secondary-button" style="margin-top: 8px;">關閉</button>
+        </div>
+
+        <div id="dateSection" class="section" style="display: none;">
+            <div class="section-title">選擇今晚要約會的女主角</div>
+            <div class="heroine-list" id="heroineList">
+                <!-- 動態產生角色卡片 -->
+            </div>
+
+            <div class="location-text">
+                約會地點會隨機從「溫泉旅館」、「泳池派對」、「酒吧」三個中選擇其一。
+            </div>
+
+            <button id="startDateButton" class="primary-button" style="margin-top: 8px; width: 100%;">開始今晚約會</button>
+
+            <div id="resultBox" class="result-box"></div>
+            <div class="note-text">約會會消耗 1 張約會卡，並提升該名女主角對玩家的好感度，之後會進入每日結算畫面。</div>
+        </div>
+
+        <div class="back-link">
+            <a href="./index.html">← 回到主頁（不會結算，只是返回顯示）</a>
+        </div>
+    </div>
+
+    <script>
+        const DAY_KEY = 'forbiddenShow_day';
+        const SLOT_KEY = 'forbiddenShow_slot';
+        const AFFECTION_KEY = 'forbiddenShow_affection';
+        const AFFECTION_TODAY_KEY = 'forbiddenShow_affection_today';
+        const DATE_CARD_KEY = 'forbiddenShow_dateCards';
+        const NIGHT_DATE_TODAY_KEY = 'forbiddenShow_nightDate_today';
+
+        const HEROINES = {
+            '搖滾少女': { charm: 'A', cooking: 'C', stamina: 'C', tag: '搖滾系 / 直率' },
+            '清純少女': { charm: 'C', cooking: 'A', stamina: 'C', tag: '文靜 / 賢慧' },
+            '運動少女': { charm: 'C', cooking: 'C', stamina: 'A', tag: '活力 / 健康派' },
+            '高冷大姐姐': { charm: 'B', cooking: 'A', stamina: 'C', tag: '成熟 / 高冷' },
+            '地雷女': { charm: 'A', cooking: 'C', stamina: 'B', tag: '反差 / 難以捉摸' }
+        };
+
+        const PLAYERS = ['玩家', '暖男', '高冷男', '體育男'];
+        const DATE_SPOTS = ['溫泉旅館', '泳池派對', '酒吧'];
+        const DATE_AFFECTION_GAIN = 10; // 一次約會基本好感度加成
+        const PLAYER_KEY = 'forbiddenShow_player';
+        const TONIGHT_RESERVED_KEY = 'forbiddenShow_tonightCompetitorReserved';
+        const REST_INTIMATE_AFFECTION_MIN = 50; // 好感度達此值以上才顯示「休息・親密劇情」
+
+        const dayNumberEl = document.getElementById('dayNumber');
+        const dateCardCountEl = document.getElementById('dateCardCount');
+        const dateButton = document.getElementById('dateButton');
+        const chatButton = document.getElementById('chatButton');
+        const restIntimateButton = document.getElementById('restIntimateButton');
+        const restButton = document.getElementById('restButton');
+        const dateSection = document.getElementById('dateSection');
+        const restIntimateSection = document.getElementById('restIntimateSection');
+        const chatSection = document.getElementById('chatSection');
+        const chatHeroineListEl = document.getElementById('chatHeroineList');
+        const chatResultBox = document.getElementById('chatResultBox');
+        const restIntimateHeroineListEl = document.getElementById('restIntimateHeroineList');
+        const goIntimateBtn = document.getElementById('goIntimateBtn');
+        const heroineListEl = document.getElementById('heroineList');
+        let hasChattedTonight = false; // 今晚是否已經聊過（只能選一位聊一次）
+        const startDateButton = document.getElementById('startDateButton');
+        const resultBox = document.getElementById('resultBox');
+
+        function loadDay() {
+            const savedDay = parseInt(localStorage.getItem(DAY_KEY), 10);
+            return Number.isNaN(savedDay) || savedDay <= 0 ? 1 : savedDay;
+        }
+
+        function ensureEveningSlot() {
+            // 保險起見，進入本頁時將時段維持在晚上
+            localStorage.setItem(SLOT_KEY, 'evening');
+        }
+
+        function loadDateCardsMap() {
+            try {
+                const raw = localStorage.getItem(DATE_CARD_KEY);
+                if (!raw) {
+                    return { '玩家': 0, '暖男': 0, '高冷男': 0, '體育男': 0 };
+                }
+                const parsed = JSON.parse(raw);
+                if (typeof parsed === 'number') {
+                    const mapFromNumber = { '玩家': parsed, '暖男': 0, '高冷男': 0, '體育男': 0 };
+                    localStorage.setItem(DATE_CARD_KEY, JSON.stringify(mapFromNumber));
+                    return mapFromNumber;
+                }
+                const base = { '玩家': 0, '暖男': 0, '高冷男': 0, '體育男': 0 };
+                Object.keys(base).forEach(name => {
+                    if (typeof parsed[name] === 'number' && parsed[name] >= 0) {
+                        base[name] = parsed[name];
+                    }
+                });
+                return base;
+            } catch (e) {
+            }
+            return { '玩家': 0, '暖男': 0, '高冷男': 0, '體育男': 0 };
+        }
+
+        function saveDateCardsMap(map) {
+            localStorage.setItem(DATE_CARD_KEY, JSON.stringify(map));
+        }
+
+        function loadAffection() {
+            try {
+                const raw = localStorage.getItem(AFFECTION_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            const base = {};
+            PLAYERS.forEach(p => {
+                Object.keys(HEROINES).forEach(hero => {
+                    if (!base[hero]) base[hero] = {};
+                    base[hero][p] = 0;
+                });
+            });
+            return base;
+        }
+
+        function saveAffection(state) {
+            localStorage.setItem(AFFECTION_KEY, JSON.stringify(state));
+        }
+
+        function loadAffectionToday() {
+            try {
+                const raw = localStorage.getItem(AFFECTION_TODAY_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            const base = {};
+            PLAYERS.forEach(p => {
+                Object.keys(HEROINES).forEach(hero => {
+                    if (!base[hero]) base[hero] = {};
+                    base[hero][p] = 0;
+                });
+            });
+            return base;
+        }
+
+        function saveAffectionToday(state) {
+            localStorage.setItem(AFFECTION_TODAY_KEY, JSON.stringify(state));
+        }
+
+        function loadPlayer() {
+            try {
+                const raw = localStorage.getItem(PLAYER_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            return { cooking: 'C', stamina: 'C', charm: 'C' };
+        }
+
+        function loadTonightReserved() {
+            try {
+                const raw = localStorage.getItem(TONIGHT_RESERVED_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            return null;
+        }
+
+        function saveTonightReserved(obj) {
+            if (obj) localStorage.setItem(TONIGHT_RESERVED_KEY, JSON.stringify(obj));
+            else localStorage.removeItem(TONIGHT_RESERVED_KEY);
+        }
+
+        // 女主角的「對應加成」屬性：取她最強的那一項（A 級）
+        function getHeroineKeyStat(heroineName) {
+            const h = HEROINES[heroineName];
+            if (!h) return 'charm';
+            if (h.charm === 'A') return 'charm';
+            if (h.cooking === 'A') return 'cooking';
+            if (h.stamina === 'A') return 'stamina';
+            if (h.charm === 'B' || h.cooking === 'B' || h.stamina === 'B') {
+                if (h.charm === 'B') return 'charm';
+                if (h.cooking === 'B') return 'cooking';
+                return 'stamina';
+            }
+            return 'charm';
+        }
+
+        const GRADE_ORDER = { A: 3, B: 2, C: 1 };
+
+        // 聊天好感度：基礎值 + 依玩家對應能力與女主角對應屬性匹配的加成（能力越高加成越高）
+        function getChatAffectionGain(heroineName) {
+            const base = 2;
+            const player = loadPlayer();
+            const keyStat = getHeroineKeyStat(heroineName);
+            const heroineStat = HEROINES[heroineName] && HEROINES[heroineName][keyStat] ? HEROINES[heroineName][keyStat] : 'C';
+            const playerVal = GRADE_ORDER[player[keyStat]] || 1;
+            const heroineVal = GRADE_ORDER[heroineStat] || 1;
+            const bonus = playerVal >= heroineVal ? (playerVal === 3 ? 4 : playerVal === 2 ? 2 : 1) : 0;
+            return base + bonus;
+        }
+
+        function renderHeroineList() {
+            heroineListEl.innerHTML = '';
+            Object.keys(HEROINES).forEach(name => {
+                const info = HEROINES[name];
+                const card = document.createElement('label');
+                card.className = 'heroine-card';
+
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'heroine';
+                radio.value = name;
+                radio.className = 'heroine-radio';
+
+                const textBox = document.createElement('div');
+                const title = document.createElement('div');
+                title.className = 'heroine-name';
+                title.textContent = name;
+                const tags = document.createElement('div');
+                tags.className = 'heroine-tags';
+                tags.textContent = info.tag || '';
+
+                textBox.appendChild(title);
+                textBox.appendChild(tags);
+
+                card.appendChild(radio);
+                card.appendChild(textBox);
+
+                radio.addEventListener('change', () => {
+                    document.querySelectorAll('.heroine-card').forEach(c => c.classList.remove('selected'));
+                    if (radio.checked) {
+                        card.classList.add('selected');
+                    }
+                });
+
+                heroineListEl.appendChild(card);
+            });
+        }
+
+        function getCompetitorsWithCards(map) {
+            return PLAYERS.filter(name =>
+                name !== '玩家' && typeof map[name] === 'number' && map[name] > 0
+            );
+        }
+
+        function renderChatHeroineList() {
+            chatHeroineListEl.innerHTML = '';
+            chatResultBox.textContent = '';
+            const reserved = loadTonightReserved();
+            const busyHeroine = reserved ? reserved.heroine : null;
+
+            Object.keys(HEROINES).forEach(name => {
+                const info = HEROINES[name];
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.className = 'heroine-card';
+                const isBusy = busyHeroine === name;
+                if (isBusy) {
+                    card.disabled = true;
+                    card.style.opacity = '0.6';
+                    card.style.cursor = 'not-allowed';
+                }
+                const title = document.createElement('div');
+                title.className = 'heroine-name';
+                title.textContent = name + (isBusy ? '（今晚與他人約會中）' : '');
+                const tags = document.createElement('div');
+                tags.className = 'heroine-tags';
+                tags.textContent = info.tag || '';
+                card.appendChild(title);
+                card.appendChild(tags);
+                card.addEventListener('click', () => {
+                    if (isBusy) return;
+                    doChat(name);
+                });
+                chatHeroineListEl.appendChild(card);
+            });
+        }
+
+        function doChat(heroineName) {
+            if (hasChattedTonight) {
+                chatResultBox.textContent = '你有點累了，該休息了。';
+                return;
+            }
+            const gain = getChatAffectionGain(heroineName);
+            const affection = loadAffection();
+            const today = loadAffectionToday();
+            if (!affection[heroineName]) affection[heroineName] = {};
+            if (typeof affection[heroineName]['玩家'] !== 'number') affection[heroineName]['玩家'] = 0;
+            affection[heroineName]['玩家'] += gain;
+            if (!today[heroineName]) today[heroineName] = {};
+            if (typeof today[heroineName]['玩家'] !== 'number') today[heroineName]['玩家'] = 0;
+            today[heroineName]['玩家'] += gain;
+            saveAffection(affection);
+            saveAffectionToday(today);
+            hasChattedTonight = true;
+            chatResultBox.textContent = '和「' + heroineName + '」聊天，好感度 +' + gain + '。（你的能力與她對應屬性越匹配，加成越高）';
+        }
+
+        function writeNightDateLog(male, heroineName, spot, win) {
+            const log = { male, heroine: heroineName, spot, win: win !== false };
+            localStorage.setItem(NIGHT_DATE_TODAY_KEY, JSON.stringify(log));
+        }
+
+        // 若今晚有預留的競爭對手約會（例如玩家選了聊天而非休息），在進入下一個時段前也要套用：扣該競爭對手的約會卡、加好感、寫入今晚約會紀錄
+        function applyReservedCompetitorDate() {
+            const reserved = loadTonightReserved();
+            if (!reserved || !reserved.male || !reserved.heroine || !reserved.spot) return;
+            const cardsMap = loadDateCardsMap();
+            if (typeof cardsMap[reserved.male] !== 'number' || cardsMap[reserved.male] <= 0) return;
+
+            const affection = loadAffection();
+            const today = loadAffectionToday();
+            const male = reserved.male;
+            const heroineName = reserved.heroine;
+
+            if (!affection[heroineName]) affection[heroineName] = {};
+            if (typeof affection[heroineName][male] !== 'number') affection[heroineName][male] = 0;
+            affection[heroineName][male] += DATE_AFFECTION_GAIN;
+            if (!today[heroineName]) today[heroineName] = {};
+            if (typeof today[heroineName][male] !== 'number') today[heroineName][male] = 0;
+            today[heroineName][male] += DATE_AFFECTION_GAIN;
+            saveAffection(affection);
+            saveAffectionToday(today);
+
+            const toSave = {
+                '玩家': typeof cardsMap['玩家'] === 'number' && cardsMap['玩家'] >= 0 ? cardsMap['玩家'] : 0,
+                '暖男': typeof cardsMap['暖男'] === 'number' && cardsMap['暖男'] >= 0 ? cardsMap['暖男'] : 0,
+                '高冷男': typeof cardsMap['高冷男'] === 'number' && cardsMap['高冷男'] >= 0 ? cardsMap['高冷男'] : 0,
+                '體育男': typeof cardsMap['體育男'] === 'number' && cardsMap['體育男'] >= 0 ? cardsMap['體育男'] : 0
+            };
+            toSave[male] = Math.max(0, (toSave[male] || 0) - 1);
+            saveDateCardsMap(toSave);
+
+            writeNightDateLog(male, heroineName, reserved.spot);
+        }
+
+        function runCompetitorDate(male, withApology, reserved) {
+            const cardsMap = loadDateCardsMap();
+            const hasCard = typeof cardsMap[male] === 'number' && cardsMap[male] > 0;
+            if (!hasCard) {
+                resultBox.textContent = '今晚沒有可用的約會卡。';
+                return;
+            }
+
+            const heroineNames = Object.keys(HEROINES);
+            const heroineName = (reserved && reserved.heroine) ? reserved.heroine : heroineNames[Math.floor(Math.random() * heroineNames.length)];
+            const spot = (reserved && reserved.spot) ? reserved.spot : DATE_SPOTS[Math.floor(Math.random() * DATE_SPOTS.length)];
+
+            const affection = loadAffection();
+            const today = loadAffectionToday();
+
+            if (!affection[heroineName]) affection[heroineName] = {};
+            if (typeof affection[heroineName][male] !== 'number') affection[heroineName][male] = 0;
+            affection[heroineName][male] += DATE_AFFECTION_GAIN;
+
+            if (!today[heroineName]) today[heroineName] = {};
+            if (typeof today[heroineName][male] !== 'number') today[heroineName][male] = 0;
+            today[heroineName][male] += DATE_AFFECTION_GAIN;
+
+            saveAffection(affection);
+            saveAffectionToday(today);
+
+            // 競爭對手去約會時，該競爭對手的約會卡也要扣減 1 張，並寫回儲存（其餘人原樣）
+            const toSave = {
+                '玩家': typeof cardsMap['玩家'] === 'number' && cardsMap['玩家'] >= 0 ? cardsMap['玩家'] : 0,
+                '暖男': typeof cardsMap['暖男'] === 'number' && cardsMap['暖男'] >= 0 ? cardsMap['暖男'] : 0,
+                '高冷男': typeof cardsMap['高冷男'] === 'number' && cardsMap['高冷男'] >= 0 ? cardsMap['高冷男'] : 0,
+                '體育男': typeof cardsMap['體育男'] === 'number' && cardsMap['體育男'] >= 0 ? cardsMap['體育男'] : 0
+            };
+            toSave[male] = Math.max(0, (toSave[male] || 0) - 1); // 使用約會卡的那位（競爭對手）減 1
+            saveDateCardsMap(toSave);
+
+            // 記錄今晚約會紀錄
+            writeNightDateLog(male, heroineName, spot);
+
+            if (withApology) {
+                resultBox.textContent =
+                    `對不起先，目前抽選到「${male}」的約會環節。` +
+                    `今晚由「${male}」帶著「${heroineName}」前往「${spot}」約會，就下一晚再嘗試吧。`;
+            } else {
+                resultBox.textContent =
+                    `今晚由「${male}」帶著「${heroineName}」前往「${spot}」約會。`;
+            }
+
+            // 幾秒後進入結算／結局頁面
+            const dayNow = loadDay();
+            setTimeout(() => {
+                const nextPage = dayNow >= 14 ? './ending.html' : './day-result.html';
+                window.location.href = nextPage;
+            }, 2000);
+        }
+
+        function init() {
+            ensureEveningSlot();
+
+            const day = loadDay();
+            dayNumberEl.textContent = day;
+
+            localStorage.removeItem(NIGHT_DATE_TODAY_KEY);
+
+            const cardsMap = loadDateCardsMap();
+            const playerCards = cardsMap['玩家'] || 0;
+            dateCardCountEl.textContent = playerCards;
+
+            const competitors = getCompetitorsWithCards(cardsMap);
+            if (competitors.length > 0) {
+                const heroineNames = Object.keys(HEROINES);
+                const reserved = {
+                    male: competitors[Math.floor(Math.random() * competitors.length)],
+                    heroine: heroineNames[Math.floor(Math.random() * heroineNames.length)],
+                    spot: DATE_SPOTS[Math.floor(Math.random() * DATE_SPOTS.length)]
+                };
+                saveTonightReserved(reserved);
+            } else {
+                saveTonightReserved(null);
+            }
+
+            renderHeroineList();
+
+            const affection = loadAffection();
+            let maxPlayerAffection = 0;
+            Object.keys(HEROINES).forEach(hero => {
+                const v = (affection[hero] && typeof affection[hero]['玩家'] === 'number') ? affection[hero]['玩家'] : 0;
+                if (v > maxPlayerAffection) maxPlayerAffection = v;
+            });
+            if (maxPlayerAffection >= REST_INTIMATE_AFFECTION_MIN) {
+                restIntimateButton.style.display = '';
+            }
+
+            dateButton.addEventListener('click', () => {
+                restIntimateSection.style.display = 'none';
+                const map = loadDateCardsMap();
+                const playerCardsNow = (typeof map['玩家'] === 'number' && map['玩家'] >= 0) ? map['玩家'] : 0;
+                const competitors = getCompetitorsWithCards(map);
+
+                if (playerCardsNow <= 0 && competitors.length === 0) {
+                    alert('目前沒有任何人持有約會卡，無法安排約會。');
+                    return;
+                }
+
+                chatSection.style.display = 'none';
+                dateSection.style.display = 'block';
+                resultBox.textContent = '';
+
+                // 只有玩家有卡：正常玩家約會流程
+                if (competitors.length === 0) {
+                    startDateButton.disabled = false;
+                    return;
+                }
+
+                // 只有競爭對手有卡
+                if (playerCardsNow <= 0 && competitors.length > 0) {
+                    startDateButton.disabled = true;
+                    const chosen = competitors[Math.floor(Math.random() * competitors.length)];
+                    runCompetitorDate(chosen, false);
+                    return;
+                }
+
+                // 玩家與競爭對手都有卡：隨機抽選
+                const candidates = ['玩家', ...competitors];
+                const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+
+                if (chosen === '玩家') {
+                    startDateButton.disabled = false;
+                    resultBox.textContent = '今晚輪到你安排約會，請選擇要約會的女主角。';
+                } else {
+                    startDateButton.disabled = true;
+                    runCompetitorDate(chosen, true);
+                }
+            });
+
+            restButton.addEventListener('click', () => {
+                const map = loadDateCardsMap();
+                const competitors = getCompetitorsWithCards(map);
+                if (competitors.length > 0) {
+                    const reserved = loadTonightReserved();
+                    if (reserved && reserved.male) {
+                        runCompetitorDate(reserved.male, false, reserved);
+                    } else {
+                        const chosen = competitors[Math.floor(Math.random() * competitors.length)];
+                        runCompetitorDate(chosen, false);
+                    }
+                    return;
+                }
+                localStorage.removeItem(NIGHT_DATE_TODAY_KEY);
+                const nextPage = day >= 14 ? './ending.html' : './day-result.html';
+                window.location.href = nextPage;
+            });
+
+            chatButton.addEventListener('click', () => {
+                dateSection.style.display = 'none';
+                restIntimateSection.style.display = 'none';
+                chatSection.style.display = 'block';
+                renderChatHeroineList();
+            });
+
+            let selectedRestIntimateHeroine = null;
+
+            restIntimateButton.addEventListener('click', () => {
+                dateSection.style.display = 'none';
+                chatSection.style.display = 'none';
+                restIntimateSection.style.display = 'block';
+                selectedRestIntimateHeroine = null;
+                goIntimateBtn.disabled = true;
+                renderRestIntimateList();
+            });
+
+            function renderRestIntimateList() {
+                restIntimateHeroineListEl.innerHTML = '';
+                const affection = loadAffection();
+                Object.keys(HEROINES).forEach(name => {
+                    const v = (affection[name] && typeof affection[name]['玩家'] === 'number') ? affection[name]['玩家'] : 0;
+                    if (v < REST_INTIMATE_AFFECTION_MIN) return;
+                    const info = HEROINES[name];
+                    const card = document.createElement('button');
+                    card.type = 'button';
+                    card.className = 'heroine-card';
+                    card.dataset.heroine = name;
+                    const title = document.createElement('div');
+                    title.className = 'heroine-name';
+                    title.textContent = name + '（好感度 ' + v + '）';
+                    const tags = document.createElement('div');
+                    tags.className = 'heroine-tags';
+                    tags.textContent = info.tag || '';
+                    card.appendChild(title);
+                    card.appendChild(tags);
+                    card.addEventListener('click', () => {
+                        restIntimateHeroineListEl.querySelectorAll('.heroine-card').forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        selectedRestIntimateHeroine = name;
+                        goIntimateBtn.disabled = false;
+                    });
+                    restIntimateHeroineListEl.appendChild(card);
+                });
+            }
+
+            goIntimateBtn.addEventListener('click', () => {
+                if (!selectedRestIntimateHeroine) return;
+                window.location.href = './intimate-cg.html?heroine=' + encodeURIComponent(selectedRestIntimateHeroine) + '&fromRest=1';
+            });
+
+            document.getElementById('closeRestIntimateBtn').addEventListener('click', () => {
+                restIntimateSection.style.display = 'none';
+            });
+
+            document.getElementById('chatNextPeriodBtn').addEventListener('click', () => {
+                applyReservedCompetitorDate(); // 聊天後進入下一個時段時，若有預留的競爭對手約會也要扣卡並寫入紀錄
+                const day = loadDay();
+                window.location.href = day >= 14 ? './ending.html' : './day-result.html';
+            });
+
+            document.getElementById('closeChatBtn').addEventListener('click', () => {
+                chatSection.style.display = 'none';
+            });
+
+            startDateButton.addEventListener('click', () => {
+                const map = loadDateCardsMap();
+                const playerCardsNow = map['玩家'] || 0;
+                if (playerCardsNow <= 0) {
+                    alert('約會卡不足，無法約會。');
+                    return;
+                }
+
+                const checked = document.querySelector('input[name="heroine"]:checked');
+                if (!checked) {
+                    alert('請先選擇今晚要約會的女主角。');
+                    return;
+                }
+
+                const heroineName = checked.value;
+                const heroineInfo = HEROINES[heroineName];
+                const spot = DATE_SPOTS[Math.floor(Math.random() * DATE_SPOTS.length)];
+
+                // 若約會地點是「泳池派對」，改為進入水上排球小遊戲，由小遊戲決定是否加好感度
+                if (spot === '泳池派對') {
+                    const params = new URLSearchParams({
+                        fromNight: '1',
+                        heroineName,
+                        heroineStamina: heroineInfo && heroineInfo.stamina ? heroineInfo.stamina : 'B',
+                        dateAffection: String(DATE_AFFECTION_GAIN)
+                    });
+                    window.location.href = './pool-volleyball.html?' + params.toString();
+                    return;
+                }
+
+                // 若約會地點是「酒吧」，改為進入骰子吹牛小遊戲，依照女主角魅力等級決定酒量上限
+                if (spot === '酒吧') {
+                    const params = new URLSearchParams({
+                        fromNight: '1',
+                        heroineName,
+                        heroineCharm: heroineInfo && heroineInfo.charm ? heroineInfo.charm : 'B',
+                        dateAffection: String(DATE_AFFECTION_GAIN)
+                    });
+                    window.location.href = './bar-dice-liar.html?' + params.toString();
+                    return;
+                }
+
+                // 若約會地點是「溫泉旅館」，改為進入按摩譜連鎖小遊戲，廚藝高的女主較難、需達對應評價才有好感
+                if (spot === '溫泉旅館') {
+                    const params = new URLSearchParams({
+                        fromNight: '1',
+                        heroineName,
+                        heroineCooking: heroineInfo && heroineInfo.cooking ? heroineInfo.cooking : 'B',
+                        dateAffection: String(DATE_AFFECTION_GAIN)
+                    });
+                    window.location.href = './onsen-massage-sequence.html?' + params.toString();
+                    return;
+                }
+
+                // 其他地點維持原本的固定加成流程
+                const affection = loadAffection();
+                const today = loadAffectionToday();
+
+                if (!affection[heroineName]) affection[heroineName] = {};
+                if (typeof affection[heroineName]['玩家'] !== 'number') affection[heroineName]['玩家'] = 0;
+                affection[heroineName]['玩家'] += DATE_AFFECTION_GAIN;
+
+                if (!today[heroineName]) today[heroineName] = {};
+                if (typeof today[heroineName]['玩家'] !== 'number') today[heroineName]['玩家'] = 0;
+                today[heroineName]['玩家'] += DATE_AFFECTION_GAIN;
+
+                saveAffection(affection);
+                saveAffectionToday(today);
+
+                // 消耗玩家的約會卡
+                map['玩家'] = (map['玩家'] || 0) - 1;
+                if (map['玩家'] < 0) map['玩家'] = 0;
+                saveDateCardsMap(map);
+                dateCardCountEl.textContent = map['玩家'];
+
+                // 記錄今晚約會紀錄（非小遊戲路線一律視為成功）
+                writeNightDateLog('玩家', heroineName, spot, true);
+
+                resultBox.textContent =
+                    `你帶著「${heroineName}」前往「${spot}」約會，度過了愉快的夜晚！好感度略有提升。`;
+
+                // 短暫顯示後：好感達標則先進入親密劇情（CG），否則進入結算／結局頁面
+                const INTIMATE_AFFECTION_THRESHOLD = 30;
+                const dayNow = loadDay();
+                setTimeout(() => {
+                    const affection = loadAffection();
+                    const total = (affection[heroineName] && typeof affection[heroineName]['玩家'] === 'number')
+                        ? affection[heroineName]['玩家'] : 0;
+                    if (total >= INTIMATE_AFFECTION_THRESHOLD) {
+                        window.location.href = './intimate-cg.html?heroine=' + encodeURIComponent(heroineName) + '&spot=' + encodeURIComponent(spot);
+                        return;
+                    }
+                    const nextPage = dayNow >= 14 ? './ending.html' : './day-result.html';
+                    window.location.href = nextPage;
+                }, 2000);
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
+

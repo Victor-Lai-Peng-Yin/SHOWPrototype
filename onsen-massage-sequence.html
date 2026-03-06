@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>溫泉旅館 - 肩頸按摩譜連鎖（測試版）</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: radial-gradient(circle at top, #f9d976 0%, #f39f86 35%, #2b1055 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #f8f9fa;
+        }
+
+        .main-container {
+            background: rgba(10, 5, 25, 0.96);
+            border-radius: 20px;
+            padding: 20px;
+            max-width: 980px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffe066;
+            margin-bottom: 8px;
+            font-size: 2.1em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #ced4da;
+            margin-bottom: 14px;
+            font-size: 0.95em;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .controls {
+            color: #e5e7eb;
+        }
+
+        .controls span {
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .scoreboard {
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .scoreboard span {
+            display: inline-block;
+            margin-left: 8px;
+        }
+
+        .game-layout {
+            margin-top: 8px;
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 16px;
+        }
+
+        .onsen-area {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: radial-gradient(circle at top, #ffecd2 0%, #fcb69f 45%, #432371 100%);
+            min-height: 320px;
+        }
+
+        .steam-overlay {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.18) 0, transparent 55%),
+                radial-gradient(circle at 80% 0%, rgba(255, 255, 255, 0.18) 0, transparent 55%);
+            pointer-events: none;
+        }
+
+        .back-silhouette {
+            position: absolute;
+            left: 50%;
+            top: 60%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 260px;
+            border-radius: 100px 100px 40px 40px;
+            background: linear-gradient(180deg, rgba(34, 9, 46, 0.1), rgba(49, 28, 65, 0.9));
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+        }
+
+        .back-neck {
+            position: absolute;
+            left: 50%;
+            top: -40px;
+            transform: translateX(-50%);
+            width: 110px;
+            height: 60px;
+            border-radius: 80px;
+            background: radial-gradient(circle at top, rgba(255, 213, 194, 0.9), rgba(191, 134, 118, 0.9));
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.65);
+        }
+
+        .towel {
+            position: absolute;
+            left: 50%;
+            bottom: -12px;
+            transform: translateX(-50%);
+            width: 220px;
+            height: 70px;
+            border-radius: 40px;
+            background: linear-gradient(120deg, rgba(255, 255, 255, 0.95), rgba(229, 235, 245, 0.95));
+            box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.5);
+        }
+
+        .water-line {
+            position: absolute;
+            left: -10%;
+            right: -10%;
+            bottom: 14px;
+            height: 36px;
+            border-radius: 40px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(194, 230, 255, 0.3));
+            box-shadow: 0 -6px 18px rgba(255, 255, 255, 0.7);
+            opacity: 0.9;
+        }
+
+        .water-line::before,
+        .water-line::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background:
+                radial-gradient(circle at 10% 60%, rgba(255, 255, 255, 0.7) 0, transparent 55%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.7) 0, transparent 55%);
+            opacity: 0.9;
+        }
+
+        .spot-layer {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .spot {
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.9), rgba(255, 169, 143, 0.35));
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transform: translate(-50%, -50%);
+            pointer-events: auto;
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s, background 0.15s, opacity 0.15s;
+            opacity: 0.78;
+        }
+
+        .spot-label {
+            position: absolute;
+            top: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.68em;
+            color: rgba(248, 249, 250, 0.8);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+        }
+
+        .spot:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.9);
+        }
+
+        .spot.demo-active {
+            border-color: #ffe066;
+            background: radial-gradient(circle at 30% 20%, #fff7e6, #ffb347);
+            box-shadow: 0 0 26px rgba(255, 203, 80, 0.9);
+            opacity: 1;
+        }
+
+        .spot.correct-flash {
+            border-color: #4ade80;
+            box-shadow: 0 0 22px rgba(74, 222, 128, 0.9);
+            background: radial-gradient(circle at 30% 20%, #f0fff4, #4ade80);
+        }
+
+        .spot.error-flash {
+            border-color: #fb7185;
+            box-shadow: 0 0 22px rgba(248, 113, 113, 0.98);
+            background: radial-gradient(circle at 30% 20%, #fff1f2, #fb7185);
+        }
+
+        .info-panel {
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.1), rgba(8, 11, 32, 0.98));
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .heroine-name {
+            font-size: 0.8em;
+            color: #ffd6a5;
+            margin-bottom: 4px;
+        }
+
+        .dialog-bubble {
+            position: relative;
+            border-radius: 14px;
+            padding: 8px 10px;
+            background: rgba(15, 23, 42, 0.92);
+            border: 1px solid rgba(248, 250, 252, 0.2);
+            font-size: 0.9em;
+            line-height: 1.5;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.9);
+        }
+
+        .dialog-bubble::before {
+            content: "";
+            position: absolute;
+            left: 16px;
+            bottom: -8px;
+            border-width: 8px 8px 0 0;
+            border-style: solid;
+            border-color: rgba(15, 23, 42, 0.92) transparent transparent transparent;
+        }
+
+        .status-text {
+            font-size: 0.86em;
+            color: #e5e7eb;
+            min-height: 38px;
+            display: flex;
+            align-items: center;
+        }
+
+        .round-and-tips {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8em;
+            color: #cbd5f5;
+            gap: 10px;
+        }
+
+        .round-label {
+            font-weight: 600;
+            color: #a5b4fc;
+        }
+
+        .hint-text {
+            text-align: right;
+        }
+
+        .timer-bar {
+            position: relative;
+            margin-top: 4px;
+            width: 100%;
+            height: 10px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.75);
+            overflow: hidden;
+        }
+
+        .timer-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #22c55e, #eab308, #f97316, #ef4444);
+            box-shadow: 0 0 16px rgba(248, 250, 252, 0.5);
+            transform-origin: left center;
+            transform: scaleX(1);
+            transition: transform 0.1s linear;
+        }
+
+        .bottom-bar {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+        }
+
+        .status {
+            color: #e5e7eb;
+        }
+
+        .buttons {
+            text-align: right;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            font-size: 0.9em;
+            font-weight: bold;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            color: #1b1b2f;
+            background: linear-gradient(135deg, #ffe066 0%, #ff9f1c 100%);
+            box-shadow: 0 8px 20px rgba(251, 191, 36, 0.6);
+            transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 26px rgba(251, 191, 36, 0.8);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        @media (max-width: 780px) {
+            .game-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1 id="pageTitle">溫泉旅館 - 肩頸按摩譜連鎖（測試版）</h1>
+        <div class="subtitle" id="subtitleText">先觀察她示範的「按摩路線」，再在時間內照順序點對每一個穴位。全連成功會讓她徹底放鬆。</div>
+
+        <div class="top-bar">
+            <div class="controls">
+                <span>操作說明：</span>
+                <span>滑鼠點擊穴位：依照記住的順序輸入</span>
+                <span>R：重新播放示範路線</span>
+            </div>
+            <div class="scoreboard">
+                <span>總分：<span id="scoreValue">0</span></span>
+                <span>最佳連段：<span id="bestComboValue">0</span></span>
+            </div>
+        </div>
+
+        <div class="game-layout">
+            <div class="onsen-area">
+                <div class="back-silhouette">
+                    <div class="back-neck"></div>
+                    <div class="towel"></div>
+                    <div class="water-line"></div>
+                </div>
+                <div class="spot-layer">
+                    <!-- 6 個可點擊穴位，位置從上到下、左右錯開 -->
+                    <button class="spot" data-index="0" style="top: 24%; left: 48%;">
+                        <span class="spot-label">頸後</span>
+                    </button>
+                    <button class="spot" data-index="1" style="top: 35%; left: 40%;">
+                        <span class="spot-label">左肩上</span>
+                    </button>
+                    <button class="spot" data-index="2" style="top: 35%; left: 56%;">
+                        <span class="spot-label">右肩上</span>
+                    </button>
+                    <button class="spot" data-index="3" style="top: 48%; left: 44%;">
+                        <span class="spot-label">左肩胛</span>
+                    </button>
+                    <button class="spot" data-index="4" style="top: 48%; left: 60%;">
+                        <span class="spot-label">右肩胛</span>
+                    </button>
+                    <button class="spot" data-index="5" style="top: 60%; left: 50%;">
+                        <span class="spot-label">背心</span>
+                    </button>
+                </div>
+                <div class="steam-overlay"></div>
+            </div>
+
+            <div class="info-panel">
+                <div>
+                    <div class="heroine-name">女主角</div>
+                    <div class="dialog-bubble" id="heroineDialogue">
+                        泡在這邊好舒服啊～那個，我先示範一次路線，你等等試著照順序幫我按按看？
+                    </div>
+                </div>
+
+                <div class="status-text" id="statusText">
+                    按「開始練習」後，我會先用光點示範一遍按摩順序。
+                </div>
+
+                <div class="round-and-tips">
+                    <div class="round-label">
+                        練習回合：<span id="roundValue">0</span>
+                    </div>
+                    <div class="hint-text" id="hintText">
+                        完整照順序全連一次，分數和好感加成會變高。
+                    </div>
+                </div>
+
+                <div class="timer-bar">
+                    <div class="timer-fill" id="timerFill"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-bar">
+            <div class="status" id="bottomStatus">準備中：先觀察畫面佈局，熟悉各個穴位的位置。</div>
+            <div class="buttons">
+                <button id="startButton" class="btn">開始練習</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const spots = Array.from(document.querySelectorAll('.spot'));
+        const heroineDialogue = document.getElementById('heroineDialogue');
+        const statusText = document.getElementById('statusText');
+        const hintText = document.getElementById('hintText');
+        const bottomStatus = document.getElementById('bottomStatus');
+        const startButton = document.getElementById('startButton');
+        const scoreValue = document.getElementById('scoreValue');
+        const bestComboValue = document.getElementById('bestComboValue');
+        const roundValue = document.getElementById('roundValue');
+        const timerFill = document.getElementById('timerFill');
+        const pageTitleEl = document.getElementById('pageTitle');
+        const subtitleEl = document.getElementById('subtitleText');
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const FROM_NIGHT = urlParams.get('fromNight') === '1';
+        const HEROINE_NAME = urlParams.get('heroineName') || '女主角';
+        const HEROINE_COOKING = urlParams.get('heroineCooking') || 'B';
+        const dateAffectionParam = parseInt(urlParams.get('dateAffection') || '', 10);
+        const DATE_AFFECTION_BASE = Number.isFinite(dateAffectionParam) ? dateAffectionParam : 10;
+
+        if (FROM_NIGHT) {
+            pageTitleEl.textContent = `溫泉旅館 - 與「${HEROINE_NAME}」的按摩時光`;
+            subtitleEl.textContent =
+                `今晚在溫泉旅館幫「${HEROINE_NAME}」按摩。她對美食與手感很講究（廚藝等級會影響難度），` +
+                `達到對應評價才有好感加成：S/A 最高，B/C 依序較少，D 無加成。`;
+        }
+
+        const GAME = {
+            sequence: [],
+            currentIndex: 0,
+            round: 0,
+            score: 0,
+            bestCombo: 0,
+            currentCombo: 0,
+            acceptingInput: false,
+            replayingDemo: false,
+            timerId: null,
+            timeLimitPerStep: 3.0,
+            timerRemaining: 0,
+            maxRounds: 5,
+            finished: false,
+            affectionGain: 0
+        };
+
+        // 整體難度調低：每步時間加長、各回合序列長度不加重
+        const ROUND_CONFIG_BASE = {
+            1: { length: 3, timeLimit: 4.2 },
+            2: { length: 4, timeLimit: 3.9 },
+            3: { length: 5, timeLimit: 3.6 },
+            4: { length: 6, timeLimit: 3.4 },
+            5: { length: 7, timeLimit: 3.2 }
+        };
+
+        function getRoundConfig(round, cooking) {
+            const base = ROUND_CONFIG_BASE[round] || { length: 7, timeLimit: 3.0 };
+            if (cooking === 'A') {
+                return { length: Math.max(2, base.length - 1), timeLimit: Math.max(3.0, base.timeLimit - 0.15) };
+            }
+            if (cooking === 'B') {
+                return { length: Math.max(2, base.length - 1), timeLimit: base.timeLimit };
+            }
+            if (cooking === 'C') {
+                return { length: Math.max(2, base.length - 1), timeLimit: Math.min(4.8, base.timeLimit + 0.5) };
+            }
+            return base;
+        }
+
+        function setHeroineLine(text) {
+            heroineDialogue.textContent = text;
+        }
+
+        function setStatus(text) {
+            statusText.textContent = text;
+        }
+
+        function setBottomStatus(text) {
+            bottomStatus.textContent = text;
+        }
+
+        function setHint(text) {
+            hintText.textContent = text;
+        }
+
+        function clearSpotClasses() {
+            spots.forEach(s => {
+                s.classList.remove('demo-active', 'correct-flash', 'error-flash');
+            });
+        }
+
+        function generateSequence(length) {
+            const seq = [];
+            const maxIndex = spots.length - 1;
+            let last = -1;
+            for (let i = 0; i < length; i++) {
+                let n;
+                do {
+                    n = Math.floor(Math.random() * (maxIndex + 1));
+                } while (n === last && maxIndex > 0);
+                seq.push(n);
+                last = n;
+            }
+            return seq;
+        }
+
+        function stopTimer() {
+            if (GAME.timerId) {
+                clearInterval(GAME.timerId);
+                GAME.timerId = null;
+            }
+        }
+
+        function startStepTimer() {
+            stopTimer();
+            GAME.timerRemaining = GAME.timeLimitPerStep;
+            timerFill.style.transform = 'scaleX(1)';
+
+            const step = 0.05;
+            GAME.timerId = setInterval(() => {
+                GAME.timerRemaining -= step;
+                const ratio = Math.max(0, GAME.timerRemaining / GAME.timeLimitPerStep);
+                timerFill.style.transform = `scaleX(${ratio})`;
+                if (GAME.timerRemaining <= 0) {
+                    stopTimer();
+                    if (GAME.acceptingInput) {
+                        handleStepTimeout();
+                    }
+                }
+            }, step * 1000);
+        }
+
+        function handleStepTimeout() {
+            GAME.acceptingInput = false;
+            clearSpotClasses();
+            const expectIndex = GAME.sequence[GAME.currentIndex];
+            const targetSpot = spots[expectIndex];
+            if (targetSpot) {
+                targetSpot.classList.add('error-flash');
+                setTimeout(() => targetSpot.classList.remove('error-flash'), 280);
+            }
+            setHeroineLine('欸？停住了嗎？如果不確定的話，可以再讓我示範一次喔。');
+            setStatus('超過時間沒有按下正確穴位，這一輪連段中斷。');
+            if (GAME.round >= GAME.maxRounds) {
+                setBottomStatus('這次沒跟上節奏沒關係，剛好也到第 5 回合，等等一起看看這次的總成績吧。');
+                GAME.currentCombo = 0;
+                updateComboDisplay();
+                endSession();
+            } else {
+                setBottomStatus('這次沒跟上節奏沒關係，可以按下「進入下一回合」再試一次。');
+                GAME.currentCombo = 0;
+                updateComboDisplay();
+                startButton.textContent = '進入下一回合';
+                startButton.disabled = false;
+            }
+        }
+
+        function updateScoreDisplay() {
+            scoreValue.textContent = GAME.score;
+        }
+
+        function updateComboDisplay() {
+            bestComboValue.textContent = GAME.bestCombo;
+        }
+
+        function startRound() {
+            clearSpotClasses();
+            stopTimer();
+            GAME.round += 1;
+            roundValue.textContent = `${GAME.round} / ${GAME.maxRounds}`;
+
+            const cfg = getRoundConfig(GAME.round, FROM_NIGHT ? HEROINE_COOKING : 'B');
+            GAME.timeLimitPerStep = cfg.timeLimit;
+            GAME.sequence = generateSequence(cfg.length);
+            GAME.currentIndex = 0;
+            GAME.acceptingInput = false;
+            GAME.replayingDemo = true;
+
+            setHeroineLine('那我先照剛才一樣的節奏走一遍，你認真看喔。');
+            setStatus(`第 ${GAME.round} 回合：先看清楚光點的順序，等我示範完再開始幫我按。`);
+            setBottomStatus('示範中：請用眼睛追蹤光點，記住從上到下、左右的順序。');
+            setHint('如果忘記順序，可以按 R 讓我重新示範一次。');
+
+            playDemoSequence(() => {
+                GAME.replayingDemo = false;
+                beginInputPhase();
+            });
+        }
+
+        function playDemoSequence(onComplete) {
+            clearSpotClasses();
+            stopTimer();
+
+            let i = 0;
+
+            function showNext() {
+                if (i >= GAME.sequence.length) {
+                    clearSpotClasses();
+                    if (typeof onComplete === 'function') onComplete();
+                    return;
+                }
+
+                const idx = GAME.sequence[i];
+                const spot = spots[idx];
+                if (!spot) {
+                    i++;
+                    showNext();
+                    return;
+                }
+
+                spot.classList.add('demo-active');
+                setStatus(`示範中（第 ${i + 1} 個）：請記住這個穴位的位置。`);
+
+                setTimeout(() => {
+                    spot.classList.remove('demo-active');
+                    i++;
+                    setTimeout(showNext, 220);
+                }, 550);
+            }
+
+            showNext();
+        }
+
+        function beginInputPhase() {
+            clearSpotClasses();
+            GAME.currentIndex = 0;
+            GAME.acceptingInput = true;
+            setHeroineLine('輪到你了～慢慢來，不用太急，但記得順序喔。');
+            setStatus('請照剛才的順序，一個一個幫她按壓穴位。');
+            setBottomStatus('輸入階段：每一步都有時間限制，請在計時條耗盡前按下正確的穴位。');
+            startStepTimer();
+        }
+
+        function handleSpotClick(index) {
+            if (!GAME.acceptingInput || GAME.replayingDemo) return;
+
+            const expected = GAME.sequence[GAME.currentIndex];
+            const clickedSpot = spots[index];
+
+            if (!clickedSpot) return;
+
+            clearSpotClasses();
+
+            if (index === expected) {
+                clickedSpot.classList.add('correct-flash');
+                setTimeout(() => clickedSpot.classList.remove('correct-flash'), 250);
+
+                GAME.currentIndex += 1;
+
+                if (GAME.currentIndex >= GAME.sequence.length) {
+                    handleRoundSuccess();
+                } else {
+                    setStatus(`很好，繼續！現在是第 ${GAME.currentIndex + 1} 個穴位。`);
+                    startStepTimer();
+                }
+            } else {
+                clickedSpot.classList.add('error-flash');
+                setTimeout(() => clickedSpot.classList.remove('error-flash'), 250);
+                handleRoundFail(expected, index);
+            }
+        }
+
+        function handleRoundSuccess() {
+            stopTimer();
+            GAME.acceptingInput = false;
+
+            const base = GAME.sequence.length * 10;
+            const comboBonus = GAME.currentCombo * 5;
+            const gained = base + comboBonus;
+
+            GAME.score += gained;
+            GAME.currentCombo += 1;
+            if (GAME.currentCombo > GAME.bestCombo) {
+                GAME.bestCombo = GAME.currentCombo;
+            }
+
+            updateScoreDisplay();
+            updateComboDisplay();
+
+            if (GAME.currentCombo === 1) {
+                setHeroineLine('嗯…這次的力道跟路線都抓得剛剛好欸。再來一次看看？');
+            } else if (GAME.currentCombo < 4) {
+                setHeroineLine('連續幾次都這麼準，我有點開始上癮了…小心我之後都指名你幫我按喔？');
+            } else {
+                setHeroineLine('哇，你也太厲害了吧…這種程度的貼心照顧，會讓人很難不心動耶。');
+            }
+
+            setStatus(`完美全連成功！這一輪獲得 ${gained} 分（基礎分 ${base} + 連段加成 ${comboBonus}）。`);
+
+            if (GAME.round >= GAME.maxRounds) {
+                setBottomStatus('第 5 回合也全連完成了，可以來看看你這次的整體表現。');
+                endSession();
+            } else {
+                setBottomStatus('你可以再按一次「進入下一回合」，試試更長的路線和更高的連段。');
+                setHint('每一回合路線都會稍微變長、變緊湊一點，但也更有成就感。');
+                startButton.textContent = '進入下一回合';
+                startButton.disabled = false;
+            }
+        }
+
+        function handleRoundFail(expectedIndex, clickedIndex) {
+            stopTimer();
+            GAME.acceptingInput = false;
+
+            const expectedSpot = spots[expectedIndex];
+            if (expectedSpot) {
+                expectedSpot.classList.add('demo-active');
+                setTimeout(() => expectedSpot.classList.remove('demo-active'), 350);
+            }
+
+            GAME.currentCombo = 0;
+            updateComboDisplay();
+
+            setHeroineLine('這裡好像有點不太一樣，不過沒關係～你可以再看一次示範。');
+            setStatus('順序按錯了，這一輪連段中斷。試著記住上一輪光點移動的節奏和方向。');
+
+            if (GAME.round >= GAME.maxRounds) {
+                setBottomStatus('這一回合沒全連也沒關係，今天的 5 回合剛好結束，我們來看一下整體表現。');
+                endSession();
+            } else {
+                setBottomStatus('如果覺得難，可以先專心記前幾個重點穴位，再慢慢加長。');
+                setHint('按 R 可以讓她再示範一次同一條路線，不需要從第 1 回合開始重來。');
+                startButton.textContent = '進入下一回合';
+                startButton.disabled = false;
+            }
+        }
+
+        const GRADE_ORDER = { S: 4, A: 3, B: 2, C: 1, D: 0 };
+        const AFFECTION_BY_GRADE = { S: 4, A: 3, B: 2, C: 1, D: 0 };
+        const REQUIRED_GRADE_BY_COOKING = { A: 'A', B: 'B', C: 'C' };
+
+        function getReferenceScore(cooking) {
+            if (cooking === 'A') return 280;
+            if (cooking === 'C') return 200;
+            return 240;
+        }
+
+        function recordNightResult(affectionGain) {
+            if (!FROM_NIGHT) return;
+            const DAY_KEY = 'forbiddenShow_day';
+            const AFFECTION_KEY = 'forbiddenShow_affection';
+            const AFFECTION_TODAY_KEY = 'forbiddenShow_affection_today';
+            const DATE_CARD_KEY = 'forbiddenShow_dateCards';
+            const NIGHT_DATE_TODAY_KEY = 'forbiddenShow_nightDate_today';
+
+            const dayNow = parseInt(localStorage.getItem(DAY_KEY), 10) || 1;
+
+            const cardsMap = (function () {
+                try {
+                    const raw = localStorage.getItem(DATE_CARD_KEY);
+                    if (!raw) return { '玩家': 0, '暖男': 0, '高冷男': 0, '體育男': 0 };
+                    const p = JSON.parse(raw);
+                    if (typeof p === 'number') return { '玩家': p, '暖男': 0, '高冷男': 0, '體育男': 0 };
+                    const base = { '玩家': 0, '暖男': 0, '高冷男': 0, '體育男': 0 };
+                    Object.keys(base).forEach(k => { if (typeof p[k] === 'number' && p[k] >= 0) base[k] = p[k]; });
+                    return base;
+                } catch (e) { return { '玩家': 0, '暖男': 0, '高冷男': 0, '體育男': 0 }; }
+            })();
+            if (cardsMap['玩家'] > 0) {
+                cardsMap['玩家'] -= 1;
+                localStorage.setItem(DATE_CARD_KEY, JSON.stringify(cardsMap));
+            }
+
+            if (affectionGain > 0) {
+                const affection = (function () {
+                    try {
+                        const raw = localStorage.getItem(AFFECTION_KEY);
+                        return raw ? JSON.parse(raw) : {};
+                    } catch (e) { return {}; }
+                })();
+                const today = (function () {
+                    try {
+                        const raw = localStorage.getItem(AFFECTION_TODAY_KEY);
+                        return raw ? JSON.parse(raw) : {};
+                    } catch (e) { return {}; }
+                })();
+                if (!affection[HEROINE_NAME]) affection[HEROINE_NAME] = {};
+                affection[HEROINE_NAME]['玩家'] = (affection[HEROINE_NAME]['玩家'] || 0) + affectionGain;
+                if (!today[HEROINE_NAME]) today[HEROINE_NAME] = {};
+                today[HEROINE_NAME]['玩家'] = (today[HEROINE_NAME]['玩家'] || 0) + affectionGain;
+                localStorage.setItem(AFFECTION_KEY, JSON.stringify(affection));
+                localStorage.setItem(AFFECTION_TODAY_KEY, JSON.stringify(today));
+            }
+
+            localStorage.setItem(NIGHT_DATE_TODAY_KEY, JSON.stringify({ male: '玩家', heroine: HEROINE_NAME, spot: '溫泉旅館', win: affectionGain > 0 }));
+            const INTIMATE_AFFECTION_THRESHOLD = 30;
+            setTimeout(function () {
+                if (affectionGain > 0) {
+                    const affection = (function () {
+                        try {
+                            const raw = localStorage.getItem(AFFECTION_KEY);
+                            return raw ? JSON.parse(raw) : {};
+                        } catch (e) { return {}; }
+                    })();
+                    const total = (affection[HEROINE_NAME] && typeof affection[HEROINE_NAME]['玩家'] === 'number')
+                        ? affection[HEROINE_NAME]['玩家'] : 0;
+                    if (total >= INTIMATE_AFFECTION_THRESHOLD) {
+                        window.location.href = './intimate-cg.html?heroine=' + encodeURIComponent(HEROINE_NAME) + '&spot=' + encodeURIComponent('溫泉旅館');
+                        return;
+                    }
+                }
+                window.location.href = dayNow >= 14 ? './ending.html' : './day-result.html';
+            }, 2000);
+        }
+
+        function endSession() {
+            stopTimer();
+            GAME.acceptingInput = false;
+            GAME.replayingDemo = false;
+            GAME.finished = true;
+
+            const referenceScore = FROM_NIGHT ? getReferenceScore(HEROINE_COOKING) : 240;
+            const performanceRatio = Math.min(GAME.score / referenceScore, 1);
+            const comboRatio = Math.min(GAME.bestCombo / 5, 1);
+            const finalPerformance = performanceRatio * 0.7 + comboRatio * 0.3;
+
+            let grade;
+            if (finalPerformance >= 0.78) {
+                grade = 'S';
+            } else if (finalPerformance >= 0.58) {
+                grade = 'A';
+            } else if (finalPerformance >= 0.38) {
+                grade = 'B';
+            } else if (finalPerformance >= 0.18) {
+                grade = 'C';
+            } else {
+                grade = 'D';
+            }
+
+            GAME.grade = grade;
+
+            let affectionGain;
+            if (FROM_NIGHT) {
+                const required = REQUIRED_GRADE_BY_COOKING[HEROINE_COOKING] || 'B';
+                const gradeOk = GRADE_ORDER[grade] >= GRADE_ORDER[required];
+                affectionGain = gradeOk ? (AFFECTION_BY_GRADE[grade] || 0) : 0;
+            } else {
+                if (grade === 'C' || grade === 'D') {
+                    affectionGain = 0;
+                } else {
+                    affectionGain = 1 + Math.round(finalPerformance * 5);
+                    affectionGain = Math.max(1, Math.min(affectionGain, 6));
+                }
+            }
+            GAME.affectionGain = affectionGain;
+
+            setStatus(`本次 5 回合結束！評價：${grade} 等　總分：${GAME.score} 分，最佳連段：${GAME.bestCombo}，好感度 +${affectionGain}。`);
+            setBottomStatus('想再玩一次的話，按下「再玩一次」從第 1 回合重新開始，或把這次好感加成記到主流程裡。');
+            setHeroineLine('今天被你照顧得很徹底了…下次來溫泉的時候，我大概又會主動排隊找你。');
+            setHint(FROM_NIGHT ? '約會模式：達標才加好感（S/A/B/C 依女主廚藝要求），幅度已壓小。' : '這裡算出的好感度加成可以之後接到約會好感系統，值為 0～6（C 以下為 0）。');
+
+            if (FROM_NIGHT) {
+                recordNightResult(affectionGain);
+                startButton.textContent = '即將返回約會結算…';
+                startButton.disabled = true;
+            } else {
+                startButton.textContent = '再玩一次（重新 5 回合）';
+                startButton.disabled = false;
+            }
+        }
+
+        spots.forEach(spot => {
+            const index = Number(spot.dataset.index);
+            spot.addEventListener('click', () => handleSpotClick(index));
+        });
+
+        startButton.addEventListener('click', () => {
+            startButton.disabled = true;
+
+            if (GAME.finished) {
+                GAME.finished = false;
+                GAME.round = 0;
+                GAME.score = 0;
+                GAME.bestCombo = 0;
+                GAME.currentCombo = 0;
+                updateScoreDisplay();
+                updateComboDisplay();
+                setHeroineLine('那我們從頭再來一次～這次你可以試著走得更順一點。');
+                setHint('前幾回合路線會比較短、時間也寬鬆，後面會慢慢加長加快。');
+            }
+
+            if (GAME.round === 0) {
+                roundValue.textContent = `0 / ${GAME.maxRounds}`;
+            }
+
+            startButton.textContent = '練習中…';
+            startRound();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'r' || e.key === 'R') {
+                if (GAME.sequence.length > 0 && !GAME.replayingDemo) {
+                    GAME.replayingDemo = true;
+                    GAME.acceptingInput = false;
+                    stopTimer();
+                    setHeroineLine('好～那我再慢一點示範一次，你這次一定記得住。');
+                    setStatus('重新示範同一條路線，等等會再回到輸入階段。');
+                    setBottomStatus('示範中：注意光點的節奏和左右交替的感覺。');
+                    playDemoSequence(() => {
+                        GAME.replayingDemo = false;
+                        beginInputPhase();
+                    });
+                }
+            }
+        });
+
+        // 初始提示狀態
+        setStatus('按「開始練習」之後，她會先用光點帶你走一遍按摩順序。');
+        setBottomStatus('準備好之後就按下「開始練習」，試著記住從頸後到肩胛、背心的移動。');
+        timerFill.style.transform = 'scaleX(0)';
+    </script>
+</body>
+</html>
+

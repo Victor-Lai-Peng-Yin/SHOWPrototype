@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>泳池派對 - 雙人水上排球（測試版）</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: radial-gradient(circle at top, #4facfe 0%, #00f2fe 40%, #1b1b2f 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #f8f9fa;
+        }
+
+        .main-container {
+            background: rgba(10, 15, 40, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            max-width: 980px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffe066;
+            margin-bottom: 8px;
+            font-size: 2.1em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #ced4da;
+            margin-bottom: 14px;
+            font-size: 0.95em;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .controls {
+            color: #e5e7eb;
+        }
+
+        .controls span {
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .scoreboard {
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .scoreboard span {
+            display: inline-block;
+            margin-left: 8px;
+        }
+
+        .arena-wrapper {
+            margin-top: 8px;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: #001d3d;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: linear-gradient(180deg, #02101f 0%, #023e8a 45%, #0077b6 100%);
+        }
+
+        .bottom-bar {
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+        }
+
+        .status {
+            color: #e5e7eb;
+        }
+
+        .buttons {
+            text-align: right;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            font-size: 0.9em;
+            font-weight: bold;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            color: #1b1b2f;
+            background: linear-gradient(135deg, #ffe066 0%, #ff9f1c 100%);
+            box-shadow: 0 8px 20px rgba(251, 191, 36, 0.6);
+            transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 26px rgba(251, 191, 36, 0.8);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1 id="pageTitle">泳池派對 - 雙人水上排球（測試版）</h1>
+        <div class="subtitle" id="subtitleText">你與女主角在泳池裡進行 1 對 1 的水上排球對決，先拿到 7 分的一方獲勝。</div>
+
+        <div class="top-bar">
+            <div class="controls">
+                <span>操作說明：</span>
+                <span>A / D：左右移動</span>
+                <span>W 或 ↑：跳躍（碰到球就會自動打向前方）</span>
+            </div>
+            <div class="scoreboard">
+                <span>你：<span id="scoreLeft">0</span></span>
+                <span>女主角：<span id="scoreRight">0</span></span>
+            </div>
+        </div>
+
+        <div class="arena-wrapper">
+            <canvas id="gameCanvas" width="900" height="450"></canvas>
+        </div>
+
+        <div class="bottom-bar">
+            <div class="status" id="statusText">按「開始遊戲」或直接使用操作鍵體驗移動與跳躍。</div>
+            <div class="buttons">
+                <button id="startButton" class="btn">開始新比賽</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const statusText = document.getElementById('statusText');
+        const scoreLeftEl = document.getElementById('scoreLeft');
+        const scoreRightEl = document.getElementById('scoreRight');
+        const startButton = document.getElementById('startButton');
+        const pageTitleEl = document.getElementById('pageTitle');
+        const subtitleEl = document.getElementById('subtitleText');
+
+        // 解析夜晚約會頁面傳入的參數（若有）
+        const urlParams = new URLSearchParams(window.location.search);
+        const FROM_NIGHT = urlParams.get('fromNight') === '1';
+        const HEROINE_NAME = urlParams.get('heroineName') || '女主角';
+        const HEROINE_STAMINA = urlParams.get('heroineStamina') || 'B';
+        const dateAffectionParam = parseInt(urlParams.get('dateAffection') || '', 10);
+        const DATE_AFFECTION_GAIN = Number.isFinite(dateAffectionParam) ? dateAffectionParam : 10;
+
+        if (FROM_NIGHT) {
+            pageTitleEl.textContent = `泳池派對 - 與「${HEROINE_NAME}」的水上排球`;
+            subtitleEl.textContent =
+                `今晚你帶著「${HEROINE_NAME}」來到泳池派對玩水上排球。先拿到 7 分就算這場表現漂亮，` +
+                `勝利時她的好感度會提升，若落敗則只是單純一起玩玩水。`;
+        }
+
+        const WIDTH = canvas.width;
+        const HEIGHT = canvas.height;
+
+        const GROUND_Y = HEIGHT * 0.85;
+        const NET_X = WIDTH / 2;
+        const NET_WIDTH = 8;
+        const NET_HEIGHT = HEIGHT * 0.5;
+
+        const GRAVITY = 0.22;
+        const FRICTION = 0.8;
+
+        const MAX_SCORE = 7;
+
+        const KEY_STATE = {
+            left: false,
+            right: false,
+            jump: false
+        };
+
+        function clamp(value, min, max) {
+            return Math.max(min, Math.min(max, value));
+        }
+
+        class Player {
+            constructor(x, side, isPlayerControlled, color) {
+                this.x = x;
+                this.y = GROUND_Y;
+                this.vx = 0;
+                this.vy = 0;
+                this.width = 24;
+                this.height = 48;
+                this.side = side; // 'left' or 'right'
+                this.isPlayerControlled = isPlayerControlled;
+                this.color = color;
+                this.onGround = true;
+                this.jumpPower = -12 / 1.25;
+                this.moveSpeed = 0.9;
+            }
+
+            update(input, ball) {
+                if (this.isPlayerControlled) {
+                    if (input.left) this.vx -= this.moveSpeed;
+                    if (input.right) this.vx += this.moveSpeed;
+
+                    if (input.jump && this.onGround) {
+                        this.vy = this.jumpPower;
+                        this.onGround = false;
+                    }
+                } else {
+                    // 女主角 AI：跟球，速度與反應適中（已調弱）
+                    const minX = this.side === 'left' ? 40 : NET_X + 40;
+                    const maxX = this.side === 'left' ? NET_X - 40 : WIDTH - 40;
+                    const targetX = clamp(ball.x, minX, maxX);
+
+                    if (targetX < this.x - 5) this.vx -= this.moveSpeed * 0.95;
+                    else if (targetX > this.x + 5) this.vx += this.moveSpeed * 0.95;
+
+                    const dx = Math.abs(ball.x - this.x);
+                    if (ball.vy > 0 && dx < 52 && this.onGround && ball.y < this.y + 15) {
+                        this.vy = this.jumpPower * 1.0;
+                        this.onGround = false;
+                    }
+                }
+
+                this.vx *= FRICTION;
+
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += GRAVITY;
+
+                // 地面碰撞
+                if (this.y > GROUND_Y) {
+                    this.y = GROUND_Y;
+                    this.vy = 0;
+                    this.onGround = true;
+                }
+
+                // 邊界與場地半場限制
+                if (this.side === 'left') {
+                    this.x = clamp(this.x, 40, NET_X - 40);
+                } else {
+                    this.x = clamp(this.x, NET_X + 40, WIDTH - 40);
+                }
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x - this.width / 2, this.y - this.height, this.width, this.height);
+                // 頭
+                ctx.beginPath();
+                ctx.arc(this.x, this.y - this.height - 10, 10, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffd6a5';
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class Ball {
+            constructor() {
+                this.reset('left');
+            }
+
+            reset(servingSide) {
+                this.radius = 22;
+                this.x = servingSide === 'left' ? WIDTH * 0.25 : WIDTH * 0.75;
+                this.y = HEIGHT * 0.3;
+                // 開球時不給水平速度，讓球垂直往下掉
+                this.vx = 0;
+                this.vy = 0.5;
+                this.lastTouch = null; // 'left' or 'right'
+                this.isOut = false;
+            }
+
+            update(players) {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += GRAVITY * 0.3;
+
+                // 邊界
+                if (this.x - this.radius < 0) {
+                    this.x = this.radius;
+                    this.vx *= -0.8;
+                } else if (this.x + this.radius > WIDTH) {
+                    this.x = WIDTH - this.radius;
+                    this.vx *= -0.8;
+                }
+
+                if (this.y - this.radius < 0) {
+                    this.y = this.radius;
+                    this.vy *= -0.8;
+                }
+
+                // 地面（泳池面）
+                if (this.y + this.radius > GROUND_Y) {
+                    this.y = GROUND_Y - this.radius;
+                    this.vy *= -0.6;
+                    this.vx *= 0.9;
+                    // 一旦球落地，我們視為一顆球的結束，標記為 out，交由遊戲判定得分
+                    this.isOut = true;
+                }
+
+                // 球網碰撞
+                if (this.x + this.radius > NET_X - NET_WIDTH / 2 &&
+                    this.x - this.radius < NET_X + NET_WIDTH / 2 &&
+                    this.y + this.radius > GROUND_Y - NET_HEIGHT) {
+                    // 簡單水平反射
+                    if (this.x < NET_X) {
+                        this.x = NET_X - NET_WIDTH / 2 - this.radius;
+                    } else {
+                        this.x = NET_X + NET_WIDTH / 2 + this.radius;
+                    }
+                    this.vx *= -0.7;
+                }
+
+                // 玩家碰撞
+                players.forEach(p => {
+                    const dx = this.x - p.x;
+                    const dy = this.y - (p.y - p.height / 2);
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const minDist = this.radius + 20;
+                    if (dist < minDist) {
+                        // 將球推開一點，避免重疊
+                        const nx = dx / (dist || 1);
+                        const ny = dy / (dist || 1);
+                        this.x = p.x + nx * minDist;
+                        this.y = (p.y - p.height / 2) + ny * minDist;
+
+                        // 根據是哪一側，往前方打
+                        if (p.side === 'left') {
+                            this.vx = 4;
+                        } else {
+                            this.vx = -4;
+                        }
+                        // 給一點向上的力，讓球在空中漂浮久一點
+                        this.vy = -3.5;
+                        this.lastTouch = p.side;
+                    }
+                });
+            }
+
+            draw(ctx) {
+                ctx.save();
+                const gradient = ctx.createRadialGradient(this.x - 3, this.y - 3, 2, this.x, this.y, this.radius);
+                gradient.addColorStop(0, '#fff');
+                gradient.addColorStop(1, '#ffcb77');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        const gameState = {
+            running: false,
+            rallyActive: false,
+            leftScore: 0,
+            rightScore: 0,
+            servingSide: 'left',
+            players: [],
+            ball: new Ball(),
+            countingDown: false,
+            countdown: 0
+        };
+
+        // 夜晚約會相關常數（只有在 FROM_NIGHT 時會用到）
+        const DAY_KEY = 'forbiddenShow_day';
+        const AFFECTION_KEY = 'forbiddenShow_affection';
+        const AFFECTION_TODAY_KEY = 'forbiddenShow_affection_today';
+        const DATE_CARD_KEY = 'forbiddenShow_dateCards';
+        const NIGHT_DATE_TODAY_KEY = 'forbiddenShow_nightDate_today';
+
+        function loadDay() {
+            const savedDay = parseInt(localStorage.getItem(DAY_KEY), 10);
+            return Number.isNaN(savedDay) || savedDay <= 0 ? 1 : savedDay;
+        }
+
+        function loadAffection() {
+            try {
+                const raw = localStorage.getItem(AFFECTION_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            return {};
+        }
+
+        function saveAffection(state) {
+            localStorage.setItem(AFFECTION_KEY, JSON.stringify(state));
+        }
+
+        function loadAffectionToday() {
+            try {
+                const raw = localStorage.getItem(AFFECTION_TODAY_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            return {};
+        }
+
+        function saveAffectionToday(state) {
+            localStorage.setItem(AFFECTION_TODAY_KEY, JSON.stringify(state));
+        }
+
+        function loadDateCardsMap() {
+            try {
+                const raw = localStorage.getItem(DATE_CARD_KEY);
+                if (!raw) {
+                    return { '玩家': 0, '暖男': 0, '高冷男': 0, '體育男': 0 };
+                }
+                const parsed = JSON.parse(raw);
+                if (typeof parsed === 'number') {
+                    const mapFromNumber = { '玩家': parsed, '暖男': 0, '高冷男': 0, '體育男': 0 };
+                    localStorage.setItem(DATE_CARD_KEY, JSON.stringify(mapFromNumber));
+                    return mapFromNumber;
+                }
+                const base = { '玩家': 0, '暖男': 0, '高冷男': 0, '體育男': 0 };
+                Object.keys(base).forEach(name => {
+                    if (typeof parsed[name] === 'number' && parsed[name] >= 0) {
+                        base[name] = parsed[name];
+                    }
+                });
+                return base;
+            } catch (e) {
+                return { '玩家': 0, '暖男': 0, '高冷男': 0, '體育男': 0 };
+            }
+        }
+
+        function saveDateCardsMap(map) {
+            localStorage.setItem(DATE_CARD_KEY, JSON.stringify(map));
+        }
+
+        // AI 難度：整體調弱，A/B/C 都較好打
+        function applyHeroineDifficulty(heroine, staminaGrade) {
+            if (!heroine) return;
+            if (staminaGrade === 'A') {
+                heroine.moveSpeed = 0.92;
+                heroine.jumpPower = -13 / 1.25;
+            } else if (staminaGrade === 'B') {
+                heroine.moveSpeed = 0.85;
+                heroine.jumpPower = -12.5 / 1.25;
+            } else {
+                heroine.moveSpeed = 0.78;
+                heroine.jumpPower = -12.2 / 1.25;
+            }
+        }
+
+        const PLAYER_KEY = 'forbiddenShow_player';
+
+        function loadPlayer() {
+            try {
+                const raw = localStorage.getItem(PLAYER_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            return { cooking: 'C', stamina: 'C', charm: 'C' };
+        }
+
+        // 玩家體力等級越高，移動與跳躍越強
+        function applyPlayerStamina(player, staminaGrade) {
+            if (!player || !player.isPlayerControlled) return;
+            if (staminaGrade === 'A') {
+                player.moveSpeed = 1.05;
+                player.jumpPower = -13 / 1.25;
+            } else if (staminaGrade === 'B') {
+                player.moveSpeed = 0.98;
+                player.jumpPower = -12.3 / 1.25;
+            } else {
+                player.moveSpeed = 0.9;
+                player.jumpPower = -12 / 1.25;
+            }
+        }
+
+        function recordNightDate(win) {
+            if (!FROM_NIGHT) return;
+
+            const dayNow = loadDay();
+
+            // 消耗玩家約會卡（無論勝敗都會消耗）
+            const cardsMap = loadDateCardsMap();
+            if (typeof cardsMap['玩家'] !== 'number' || cardsMap['玩家'] < 0) {
+                cardsMap['玩家'] = 0;
+            }
+            if (cardsMap['玩家'] > 0) {
+                cardsMap['玩家'] -= 1;
+                if (cardsMap['玩家'] < 0) cardsMap['玩家'] = 0;
+                saveDateCardsMap(cardsMap);
+            }
+
+            // 勝利時才增加好感度
+            if (win) {
+                const affection = loadAffection();
+                const today = loadAffectionToday();
+
+                if (!affection[HEROINE_NAME]) affection[HEROINE_NAME] = {};
+                if (typeof affection[HEROINE_NAME]['玩家'] !== 'number') affection[HEROINE_NAME]['玩家'] = 0;
+                affection[HEROINE_NAME]['玩家'] += DATE_AFFECTION_GAIN;
+
+                if (!today[HEROINE_NAME]) today[HEROINE_NAME] = {};
+                if (typeof today[HEROINE_NAME]['玩家'] !== 'number') today[HEROINE_NAME]['玩家'] = 0;
+                today[HEROINE_NAME]['玩家'] += DATE_AFFECTION_GAIN;
+
+                saveAffection(affection);
+                saveAffectionToday(today);
+            }
+
+            // 記錄今晚約會紀錄（給日結畫面使用，含勝負）
+            const log = {
+                male: '玩家',
+                heroine: HEROINE_NAME,
+                spot: '泳池派對',
+                win: win
+            };
+            localStorage.setItem(NIGHT_DATE_TODAY_KEY, JSON.stringify(log));
+
+            // 短暫顯示結果後：好感達標則先進入親密劇情（CG），否則進入結算 / 結局頁面
+            const INTIMATE_AFFECTION_THRESHOLD = 30;
+            setTimeout(() => {
+                if (win) {
+                    const affection = loadAffection();
+                    const total = (affection[HEROINE_NAME] && typeof affection[HEROINE_NAME]['玩家'] === 'number')
+                        ? affection[HEROINE_NAME]['玩家'] : 0;
+                    if (total >= INTIMATE_AFFECTION_THRESHOLD) {
+                        window.location.href = './intimate-cg.html?heroine=' + encodeURIComponent(HEROINE_NAME) + '&spot=' + encodeURIComponent('泳池派對');
+                        return;
+                    }
+                }
+                const nextPage = dayNow >= 14 ? './ending.html' : './day-result.html';
+                window.location.href = nextPage;
+            }, 2000);
+        }
+
+        function resetMatch() {
+            gameState.leftScore = 0;
+            gameState.rightScore = 0;
+            gameState.servingSide = 'left';
+            scoreLeftEl.textContent = '0';
+            scoreRightEl.textContent = '0';
+            statusText.textContent = '比賽開始！先拿到 7 分的一方獲勝。';
+
+            // 建立玩家（左側）與女主角（右側）
+            const player = new Player(WIDTH * 0.25, 'left', true, '#4cc9f0');
+            const heroine = new Player(WIDTH * 0.75, 'right', false, '#f72585');
+            const playerStats = loadPlayer();
+            const playerStamina = (playerStats && playerStats.stamina) ? playerStats.stamina : 'C';
+            applyPlayerStamina(player, playerStamina);
+            applyHeroineDifficulty(heroine, HEROINE_STAMINA);
+
+            gameState.players = [player, heroine];
+
+            gameState.ball.reset(gameState.servingSide);
+            gameState.rallyActive = false;
+            gameState.countingDown = true;
+            gameState.countdown = 3;
+            gameState.running = true;
+        }
+
+        function awardPoint() {
+            const ball = gameState.ball;
+            // 只依照「球落在哪一側地板」判定得分：
+            // 球落在左半場 -> 右邊（女主角）得分；落在右半場 -> 左邊（玩家）得分
+            let pointTo = ball.x < NET_X ? 'right' : 'left';
+
+            if (pointTo === 'left') {
+                gameState.leftScore++;
+                scoreLeftEl.textContent = gameState.leftScore;
+                statusText.textContent = '你們得分！';
+            } else {
+                gameState.rightScore++;
+                scoreRightEl.textContent = gameState.rightScore;
+                statusText.textContent = '對手得分。';
+            }
+
+            gameState.servingSide = pointTo === 'left' ? 'left' : 'right';
+
+            if (gameState.leftScore >= MAX_SCORE || gameState.rightScore >= MAX_SCORE) {
+                gameState.running = false;
+                const win = gameState.leftScore > gameState.rightScore;
+
+                if (FROM_NIGHT) {
+                    statusText.textContent = win
+                        ? `比賽結束！你在泳池派對上大獲全勝，「${HEROINE_NAME}」對你的印象明顯加分。`
+                        : `比賽結束！這次是「${HEROINE_NAME}」技高一籌，就當作一起玩水放鬆，之後還有機會挽回形象。`;
+                    recordNightDate(win);
+                } else {
+                    statusText.textContent = win
+                        ? '比賽結束！你贏了，可以之後把這場表現接到約會好感系統。'
+                        : '比賽結束！這次女主角比較厲害，下次可以再試。';
+                }
+
+                startButton.disabled = false;
+            } else {
+                // 下一球：先重置球，接著進入發球倒數
+                gameState.ball.reset(gameState.servingSide);
+                gameState.rallyActive = false;
+                gameState.countingDown = true;
+                gameState.countdown = 3;
+            }
+        }
+
+        function drawCourt() {
+            // 泳池水面線
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.fillRect(0, GROUND_Y + 4, WIDTH, 3);
+
+            // 泳池邊
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.fillRect(0, GROUND_Y + 7, WIDTH, 8);
+
+            // 球網
+            ctx.fillStyle = 'rgba(240, 248, 255, 0.9)';
+            ctx.fillRect(NET_X - NET_WIDTH / 2, GROUND_Y - NET_HEIGHT, NET_WIDTH, NET_HEIGHT);
+            // 網格線
+            ctx.strokeStyle = 'rgba(52, 86, 139, 0.7)';
+            ctx.lineWidth = 1;
+            for (let y = GROUND_Y - NET_HEIGHT; y < GROUND_Y; y += 12) {
+                ctx.beginPath();
+                ctx.moveTo(NET_X - NET_WIDTH / 2, y);
+                ctx.lineTo(NET_X + NET_WIDTH / 2, y);
+                ctx.stroke();
+            }
+        }
+
+        function update() {
+            if (!gameState.running) return;
+
+            // 先更新玩家位置
+            gameState.players.forEach(p => p.update(KEY_STATE, gameState.ball));
+
+            // 若在發球倒數階段，只更新倒數，不更新球物理
+            if (gameState.countingDown) {
+                gameState.countdown -= 1 / 60;
+                const show = Math.max(1, Math.ceil(gameState.countdown));
+                if (gameState.countdown > 0) {
+                    statusText.textContent = `發球倒數：${show}`;
+                } else {
+                    gameState.countingDown = false;
+                    gameState.rallyActive = true;
+                    statusText.textContent = '球在空中，開始比賽！';
+                }
+                return;
+            }
+
+            // 正式對戰階段才更新球
+            if (gameState.rallyActive) {
+                gameState.ball.update(gameState.players);
+
+                if (gameState.ball.isOut) {
+                    gameState.rallyActive = false;
+                    gameState.ball.isOut = false;
+                    awardPoint();
+                }
+            }
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+            // 背景漸層與遠景
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+            skyGrad.addColorStop(0, '#03045e');
+            skyGrad.addColorStop(0.4, '#023e8a');
+            skyGrad.addColorStop(1, '#0077b6');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+            // 簡單燈光
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.beginPath();
+            ctx.ellipse(WIDTH * 0.25, 40, 80, 30, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(WIDTH * 0.75, 40, 80, 30, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 泳池與球網
+            drawCourt();
+
+            // 玩家與球
+            gameState.players.forEach(p => p.draw(ctx));
+            gameState.ball.draw(ctx);
+        }
+
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'a' || e.key === 'A') KEY_STATE.left = true;
+            if (e.key === 'd' || e.key === 'D') KEY_STATE.right = true;
+            if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') KEY_STATE.jump = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'a' || e.key === 'A') KEY_STATE.left = false;
+            if (e.key === 'd' || e.key === 'D') KEY_STATE.right = false;
+            if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') KEY_STATE.jump = false;
+        });
+
+        startButton.addEventListener('click', () => {
+            startButton.disabled = true;
+            resetMatch();
+        });
+
+        // 初次進入時先畫靜態畫面
+        render();
+        // 啟動主迴圈
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
+

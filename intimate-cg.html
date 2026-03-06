@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>親密劇情 - 禁忌的Show</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(180deg, #1a0a14 0%, #2d1b2e 50%, #1a0a14 100%);
+            min-height: 100vh;
+            color: #f0e6ed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .cg-container {
+            max-width: 560px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .cg-title {
+            font-size: 1.4em;
+            color: #e8b4d4;
+            margin-bottom: 16px;
+            letter-spacing: 0.05em;
+        }
+
+        .cg-desc {
+            background: rgba(40, 25, 45, 0.8);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            line-height: 1.7;
+            border: 1px solid rgba(232, 180, 212, 0.2);
+        }
+
+        .cg-desc .heroine-name {
+            color: #e8b4d4;
+            font-weight: bold;
+        }
+
+        .cg-desc .affection-num {
+            color: #ffd4ec;
+            font-weight: bold;
+        }
+
+        .cg-image-wrap {
+            width: 100%;
+            aspect-ratio: 4/3;
+            max-height: 320px;
+            background: linear-gradient(145deg, rgba(80, 40, 70, 0.6), rgba(40, 20, 45, 0.8));
+            border-radius: 12px;
+            border: 1px solid rgba(232, 180, 212, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .cg-placeholder {
+            color: #8a7a88;
+            font-size: 0.9em;
+        }
+
+        .btn-continue {
+            padding: 14px 40px;
+            font-size: 1.05em;
+            font-weight: bold;
+            color: #1a0a14;
+            background: linear-gradient(135deg, #e8b4d4 0%, #c98bb0 100%);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(201, 139, 176, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-continue:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 26px rgba(201, 139, 176, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="cg-container">
+        <h1 class="cg-title">親密劇情</h1>
+
+        <div class="cg-desc" id="cgDesc">
+            目前進入<span class="heroine-name" id="heroineName">女主角</span>的親密劇情。<br>
+            當前好感度：<span class="affection-num" id="affectionNum">0</span>。
+        </div>
+
+        <div class="cg-image-wrap">
+            <p class="cg-placeholder">CG</p>
+        </div>
+
+        <button class="btn-continue" id="btnContinue">繼續</button>
+    </div>
+
+    <script>
+        const DAY_KEY = 'forbiddenShow_day';
+        const NIGHT_DATE_TODAY_KEY = 'forbiddenShow_nightDate_today';
+        const AFFECTION_KEY = 'forbiddenShow_affection';
+
+        function loadAffection() {
+            try {
+                const raw = localStorage.getItem(AFFECTION_KEY);
+                return raw ? JSON.parse(raw) : {};
+            } catch (e) { return {}; }
+        }
+
+        function init() {
+            const params = new URLSearchParams(window.location.search);
+            let heroine = params.get('heroine') || '';
+
+            if (!heroine) {
+                try {
+                    const raw = localStorage.getItem(NIGHT_DATE_TODAY_KEY);
+                    if (raw) {
+                        const data = JSON.parse(raw);
+                        if (data.heroine) heroine = data.heroine;
+                    }
+                } catch (e) {}
+            }
+
+            if (!heroine) heroine = '女主角';
+
+            const affection = loadAffection();
+            const value = (affection[heroine] && typeof affection[heroine]['玩家'] === 'number')
+                ? affection[heroine]['玩家'] : 0;
+
+            document.getElementById('heroineName').textContent = heroine;
+            document.getElementById('affectionNum').textContent = value;
+
+            document.getElementById('btnContinue').addEventListener('click', () => {
+                const day = parseInt(localStorage.getItem(DAY_KEY), 10) || 1;
+                window.location.href = day >= 14 ? './ending.html' : './day-result.html';
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>

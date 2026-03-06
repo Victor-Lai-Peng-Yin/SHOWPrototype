@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>禁忌的Show - 主頁</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .main-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 700px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+
+        .day-info,
+        .time-info {
+            text-align: center;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .time-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .time-button {
+            flex: 1;
+            padding: 12px;
+            font-size: 1em;
+            font-weight: bold;
+            border-radius: 10px;
+            border: 2px solid #ccc;
+            background: #f5f5f5;
+            cursor: default;
+            transition: all 0.2s;
+        }
+
+        .time-button.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .time-button.disabled {
+            opacity: 0.6;
+        }
+
+        .action-buttons {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .primary-button {
+            width: 100%;
+            padding: 16px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .primary-button:hover:enabled {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .primary-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .secondary-button {
+            width: 100%;
+            padding: 12px;
+            font-size: 1em;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .secondary-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px rgba(73, 80, 87, 0.4);
+        }
+
+        .hint-text {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #777;
+        }
+
+        .affection-section {
+            margin-top: 25px;
+        }
+
+        .affection-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-size: 0.9em;
+        }
+
+        .affection-table th,
+        .affection-table td {
+            border: 1px solid #dee2e6;
+            padding: 6px 8px;
+            text-align: center;
+        }
+
+        .affection-table th {
+            background: #f1f3f5;
+            color: #333;
+        }
+
+        .affection-hero-name {
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .affection-bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 2px;
+        }
+
+        .affection-bar {
+            position: relative;
+            width: 100%;
+            height: 8px;
+            border-radius: 999px;
+            background: #f1f3f5;
+            overflow: hidden;
+        }
+
+        .affection-bar-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 0;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #74c0fc 0%, #845ef7 50%, #e599f7 100%);
+            transition: width 0.3s;
+        }
+
+        .affection-bar-label {
+            font-size: 0.75em;
+            color: #555;
+        }
+
+        .date-cards-others {
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            color: #555;
+        }
+    </style>
+
+</head>
+<body>
+    <div class="main-container">
+        <h1>禁忌的Show - 主頁</h1>
+        <div class="subtitle">這裡記錄今天的進度與時段，從早上破冰小遊戲開始一天。</div>
+
+        <div class="day-info">今天是第 <span id="dayNumber">1</span> 天</div>
+        <div class="time-info">目前時段：<span id="timeLabel">早上</span></div>
+        <div class="day-info">約會卡：<span id="dateCardCount">0</span> 張</div>
+        <div class="date-cards-others">
+            其他男主角：暖男 <span id="dateCardWarm">0</span> 張　高冷男 <span id="dateCardCold">0</span> 張　體育男 <span id="dateCardSport">0</span> 張
+        </div>
+
+        <div class="time-buttons">
+            <button id="morningBtnLabel" class="time-button active">早上</button>
+            <button id="noonBtnLabel" class="time-button disabled">中午</button>
+            <button id="eveningBtnLabel" class="time-button disabled">晚上</button>
+        </div>
+
+        <div class="action-buttons">
+            <button id="startMorningBtn" class="primary-button">開始早上破冰小遊戲</button>
+        </div>
+
+        <div class="hint-text">
+            早上玩完小遊戲後會自動回到這裡並切到中午。中午、晚上的內容之後再加入。
+        </div>
+
+        <div class="affection-section">
+            <div class="section-title">女主角好感度一覽（累積值）</div>
+            <table class="affection-table">
+                <thead>
+                    <tr>
+                        <th>女主角</th>
+                        <th>玩家</th>
+                        <th>暖男</th>
+                        <th>高冷男</th>
+                        <th>體育男</th>
+                    </tr>
+                </thead>
+                <tbody id="affectionTableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="affection-section">
+            <div class="section-title">當天女主角好感度（本日累計）</div>
+            <table class="affection-table">
+                <thead>
+                    <tr>
+                        <th>女主角</th>
+                        <th>玩家</th>
+                        <th>暖男</th>
+                        <th>高冷男</th>
+                        <th>體育男</th>
+                    </tr>
+                </thead>
+                <tbody id="affectionTodayTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const DAY_KEY = 'forbiddenShow_day';
+        const SLOT_KEY = 'forbiddenShow_slot';
+        const AFFECTION_KEY = 'forbiddenShow_affection';
+        const AFFECTION_TODAY_KEY = 'forbiddenShow_affection_today';
+        const DATE_CARD_KEY = 'forbiddenShow_dateCards';
+        const PLAYER_KEY = 'forbiddenShow_player';
+        const TRAIN_KEY = 'forbiddenShow_training';
+        const LAST_SETTLED_DAY_KEY = 'forbiddenShow_lastSettledDay';
+
+        const HEROINES = {
+            '搖滾少女': { charm: 'A', cooking: 'C', stamina: 'C' },
+            '清純少女': { charm: 'C', cooking: 'A', stamina: 'C' },
+            '運動少女': { charm: 'C', cooking: 'C', stamina: 'A' },
+            '高冷大姐姐': { charm: 'B', cooking: 'A', stamina: 'C' },
+            '地雷女': { charm: 'A', cooking: 'C', stamina: 'B' }
+        };
+
+        const dayNumberEl = document.getElementById('dayNumber');
+        const timeLabelEl = document.getElementById('timeLabel');
+        const dateCardCountEl = document.getElementById('dateCardCount');
+
+        const morningLabelBtn = document.getElementById('morningBtnLabel');
+        const noonLabelBtn = document.getElementById('noonBtnLabel');
+        const eveningLabelBtn = document.getElementById('eveningBtnLabel');
+
+        const startMorningBtn = document.getElementById('startMorningBtn');
+        const affectionTableBody = document.getElementById('affectionTableBody');
+        const affectionTodayTableBody = document.getElementById('affectionTodayTableBody');
+
+        const state = {
+            day: 1,
+            slot: 'morning' // 'morning' | 'noon' | 'evening'
+        };
+
+        function loadState() {
+            const savedDay = parseInt(localStorage.getItem(DAY_KEY), 10);
+            const savedSlot = localStorage.getItem(SLOT_KEY);
+            if (!Number.isNaN(savedDay) && savedDay > 0) {
+                state.day = savedDay;
+            }
+            if (savedSlot === 'morning' || savedSlot === 'noon' || savedSlot === 'evening') {
+                state.slot = savedSlot;
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem(DAY_KEY, String(state.day));
+            localStorage.setItem(SLOT_KEY, state.slot);
+        }
+
+        function loadAffection() {
+            try {
+                const raw = localStorage.getItem(AFFECTION_KEY);
+                if (raw) {
+                    return JSON.parse(raw);
+                }
+            } catch (e) {
+                // ignore parse error and recreate
+            }
+            const base = {};
+            const players = ['玩家', '暖男', '高冷男', '體育男'];
+            Object.keys(HEROINES).forEach(hero => {
+                base[hero] = {};
+                players.forEach(p => {
+                    base[hero][p] = 0;
+                });
+            });
+            return base;
+        }
+
+        const MAX_AFFECTION_CAP = 100; // 進度條顯示上限
+
+        function createAffectionCell(value) {
+            const v = typeof value === 'number' && value > 0 ? value : 0;
+            const percent = Math.max(0, Math.min(100, Math.round((v / MAX_AFFECTION_CAP) * 100)));
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'affection-bar-wrapper';
+
+            const bar = document.createElement('div');
+            bar.className = 'affection-bar';
+
+            const fill = document.createElement('div');
+            fill.className = 'affection-bar-fill';
+            fill.style.width = percent + '%';
+
+            bar.appendChild(fill);
+
+            const label = document.createElement('div');
+            label.className = 'affection-bar-label';
+            label.textContent = v;
+
+            wrapper.appendChild(bar);
+            wrapper.appendChild(label);
+
+            return wrapper;
+        }
+
+        function renderAffection() {
+            const affection = loadAffection();
+            const heroes = Object.keys(HEROINES);
+            const players = ['玩家', '暖男', '高冷男', '體育男'];
+
+            affectionTableBody.innerHTML = '';
+            heroes.forEach(hero => {
+                const tr = document.createElement('tr');
+                const nameTd = document.createElement('td');
+                nameTd.textContent = hero;
+                nameTd.className = 'affection-hero-name';
+                tr.appendChild(nameTd);
+                players.forEach(p => {
+                    const td = document.createElement('td');
+                    const v = affection[hero] && typeof affection[hero][p] === 'number' ? affection[hero][p] : 0;
+                    td.appendChild(createAffectionCell(v));
+                    tr.appendChild(td);
+                });
+                affectionTableBody.appendChild(tr);
+            });
+        }
+
+        function loadAffectionToday() {
+            try {
+                const raw = localStorage.getItem(AFFECTION_TODAY_KEY);
+                if (raw) {
+                    return JSON.parse(raw);
+                }
+            } catch (e) {
+                // ignore parse error and recreate
+            }
+            const base = {};
+            const players = ['玩家', '暖男', '高冷男', '體育男'];
+            Object.keys(HEROINES).forEach(hero => {
+                base[hero] = {};
+                players.forEach(p => {
+                    base[hero][p] = 0;
+                });
+            });
+            return base;
+        }
+
+        function renderAffectionToday() {
+            const affection = loadAffectionToday();
+            const heroes = Object.keys(HEROINES);
+            const players = ['玩家', '暖男', '高冷男', '體育男'];
+
+            affectionTodayTableBody.innerHTML = '';
+            heroes.forEach(hero => {
+                const tr = document.createElement('tr');
+                const nameTd = document.createElement('td');
+                nameTd.textContent = hero;
+                nameTd.className = 'affection-hero-name';
+                tr.appendChild(nameTd);
+                players.forEach(p => {
+                    const td = document.createElement('td');
+                    const v = affection[hero] && typeof affection[hero][p] === 'number' ? affection[hero][p] : 0;
+                    td.appendChild(createAffectionCell(v));
+                    tr.appendChild(td);
+                });
+                affectionTodayTableBody.appendChild(tr);
+            });
+        }
+
+        function loadDateCards() {
+            // 為了相容舊版，可能是數字或物件
+            try {
+                const raw = localStorage.getItem(DATE_CARD_KEY);
+                if (!raw) {
+                    return { '玩家': 0, '暖男': 0, '高冷男': 0, '體育男': 0 };
+                }
+                const parsed = JSON.parse(raw);
+                if (typeof parsed === 'number') {
+                    const mapFromNumber = { '玩家': parsed, '暖男': 0, '高冷男': 0, '體育男': 0 };
+                    localStorage.setItem(DATE_CARD_KEY, JSON.stringify(mapFromNumber));
+                    return mapFromNumber;
+                }
+                const base = { '玩家': 0, '暖男': 0, '高冷男': 0, '體育男': 0 };
+                Object.keys(base).forEach(name => {
+                    if (typeof parsed[name] === 'number' && parsed[name] >= 0) {
+                        base[name] = parsed[name];
+                    }
+                });
+                return base;
+            } catch (e) {
+                return { '玩家': 0, '暖男': 0, '高冷男': 0, '體育男': 0 };
+            }
+        }
+
+        function renderDateCards() {
+            const cards = loadDateCards();
+            const n = (name) => (typeof cards[name] === 'number' && cards[name] >= 0) ? cards[name] : 0;
+            dateCardCountEl.textContent = n('玩家');
+            document.getElementById('dateCardWarm').textContent = n('暖男');
+            document.getElementById('dateCardCold').textContent = n('高冷男');
+            document.getElementById('dateCardSport').textContent = n('體育男');
+        }
+
+        function slotLabel(slot) {
+            if (slot === 'morning') return '早上';
+            if (slot === 'noon') return '中午';
+            return '晚上';
+        }
+
+        function updateUI() {
+            dayNumberEl.textContent = state.day;
+            timeLabelEl.textContent = slotLabel(state.slot);
+
+            // 標籤高亮
+            morningLabelBtn.classList.toggle('active', state.slot === 'morning');
+            noonLabelBtn.classList.toggle('active', state.slot === 'noon');
+            eveningLabelBtn.classList.toggle('active', state.slot === 'evening');
+
+            // 中午、晚上標籤僅作為顯示（實際操作透過下方主行動按鈕）
+            noonLabelBtn.classList.add('disabled');
+            eveningLabelBtn.classList.add('disabled');
+
+            // 依照時段切換主行動按鈕
+            if (state.slot === 'morning') {
+                startMorningBtn.disabled = false;
+                startMorningBtn.textContent = '開始早上破冰小遊戲';
+            } else if (state.slot === 'noon') {
+                startMorningBtn.disabled = false;
+                startMorningBtn.textContent = '開始自由活動';
+            } else {
+                startMorningBtn.disabled = false;
+                startMorningBtn.textContent = '進入夜晚活動';
+            }
+
+        }
+
+        function advanceSlot() {
+            if (state.slot === 'morning') {
+                state.slot = 'noon';
+            } else if (state.slot === 'noon') {
+                state.slot = 'evening';
+            }
+            saveState();
+            updateUI();
+        }
+
+        // 初始化狀態
+        loadState();
+
+        // 如果有 autoNext 參數，先前進一個時段
+        (function handleAutoNextFromGames() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('autoNext') === '1') {
+                advanceSlot();
+                params.delete('autoNext');
+                const qs = params.toString();
+                const newUrl = window.location.pathname + (qs ? '?' + qs : '');
+                window.history.replaceState({}, '', newUrl);
+            } else {
+                updateUI();
+            }
+            renderAffection();
+            renderAffectionToday();
+            renderDateCards();
+        })();
+
+        // 事件綁定
+        startMorningBtn.addEventListener('click', () => {
+            if (state.slot === 'morning') {
+                window.location.href = './morning-games.html';
+            } else if (state.slot === 'noon') {
+                window.location.href = './free-activity.html';
+            } else if (state.slot === 'evening') {
+                window.location.href = './night-activity.html';
+            }
+        });
+
+        // 中午、晚上標籤僅作為當前時段顯示，不再負責跳轉
+
+        // 按下 D 鍵重置所有進度與數值
+        function resetAllProgress() {
+            const ok = confirm('確定要重置所有天數、能力值與好感度嗎？此操作無法復原。');
+            if (!ok) return;
+
+            // 清除主要進度相關資料
+            localStorage.removeItem(DAY_KEY);
+            localStorage.removeItem(SLOT_KEY);
+            localStorage.removeItem(AFFECTION_KEY);
+            localStorage.removeItem(AFFECTION_TODAY_KEY);
+            localStorage.removeItem(DATE_CARD_KEY);
+            localStorage.removeItem(PLAYER_KEY);
+            localStorage.removeItem(TRAIN_KEY);
+            localStorage.removeItem(LAST_SETTLED_DAY_KEY);
+
+            // 重設當前狀態並重新渲染
+            state.day = 1;
+            state.slot = 'morning';
+            saveState();
+            updateUI();
+            renderAffection();
+            renderAffectionToday();
+            renderDateCards();
+
+            alert('所有數值已重置。');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'd' || e.key === 'D') {
+                resetAllProgress();
+            }
+        });
+    </script>
+</body>
+</html>
+
