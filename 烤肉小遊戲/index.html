@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>烤肉小遊戲</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .skill-display {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+        }
+
+        .skill-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .skill-control {
+            margin-top: 10px;
+        }
+
+        .skill-control input {
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        .game-info {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 10px;
+            border: 2px solid #ffc107;
+        }
+
+        .target-doneness {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #d9534f;
+        }
+
+        .countdown {
+            font-size: 3em;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .progress-container {
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .ai-progress-bar {
+            width: 100%;
+            height: 25px;
+            background: #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 8px;
+        }
+
+        .ai-progress-fill {
+            height: 100%;
+            transition: width 0.1s linear;
+            position: relative;
+        }
+
+        .ai-progress-fill.ai1 {
+            background: linear-gradient(90deg, #ff6b6b 0%, #ee5a6f 100%);
+        }
+
+        .ai-progress-fill.ai2 {
+            background: linear-gradient(90deg, #4ecdc4 0%, #44a08d 100%);
+        }
+
+        .ai-progress-fill.ai3 {
+            background: linear-gradient(90deg, #a8e6cf 0%, #7fcdbb 100%);
+        }
+
+        .ai-press-marker {
+            position: absolute;
+            top: 0;
+            width: 3px;
+            height: 100%;
+            background: #fff;
+            z-index: 20;
+            box-shadow: 0 0 3px rgba(0,0,0,0.5);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b6b 0%, #ff8c42 50%, #ffd93d 100%);
+            transition: width 0.05s linear;
+            position: relative;
+            border-radius: 15px;
+        }
+
+        .judge-window {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            background: rgba(40, 167, 69, 0.4);
+            border-left: 2px solid #28a745;
+            border-right: 2px solid #28a745;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .judge-marker {
+            position: absolute;
+            top: 0;
+            width: 3px;
+            height: 100%;
+            background: #ffc107;
+            z-index: 15;
+            pointer-events: none;
+            box-shadow: 0 0 5px rgba(255, 193, 7, 0.8);
+        }
+
+        .game-button {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 20px;
+        }
+
+        .game-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .game-button:active {
+            transform: translateY(0);
+        }
+
+        .game-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-container {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 10px;
+        }
+
+        .result-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .score-display {
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .score-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .rating-display {
+            text-align: center;
+            font-size: 1.5em;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .rating-perfect {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .rating-good {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .rating-normal {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .rating-fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .ranking {
+            margin-top: 20px;
+        }
+
+        .ranking-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ranking-item.player {
+            background: #e7f3ff;
+            font-weight: bold;
+        }
+
+        .ai-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        .status-text {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .round-info {
+            text-align: center;
+            margin: 15px 0;
+            padding: 10px;
+            background: #e7f3ff;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #0066cc;
+        }
+
+        .total-score-display {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            border: 2px solid #667eea;
+        }
+
+        .total-score-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .total-score-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+        }
+
+        .total-score-item.player {
+            background: #e7f3ff;
+            font-weight: bold;
+        }
+
+        .final-ranking {
+            margin-top: 20px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            color: white;
+        }
+
+        .final-ranking-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .final-ranking-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            font-size: 1.2em;
+        }
+
+        .final-ranking-item.winner {
+            background: rgba(255, 215, 0, 0.3);
+            border: 2px solid #ffd700;
+            font-weight: bold;
+            font-size: 1.4em;
+        }
+
+        .rank-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .skill-level-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .level-button {
+            flex: 1;
+            padding: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border: 3px solid #ccc;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .level-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .level-button.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .level-button.level-c {
+            color: #d9534f;
+        }
+
+        .level-button.level-c.selected {
+            background: linear-gradient(135deg, #d9534f 0%, #c9302c 100%);
+            color: white;
+        }
+
+        .level-button.level-b {
+            color: #f0ad4e;
+        }
+
+        .level-button.level-b.selected {
+            background: linear-gradient(135deg, #f0ad4e 0%, #ec971f 100%);
+            color: white;
+        }
+
+        .level-button.level-a {
+            color: #5cb85c;
+        }
+
+        .level-button.level-a.selected {
+            background: linear-gradient(135deg, #5cb85c 0%, #449d44 100%);
+            color: white;
+        }
+
+        .ai-skill-selector {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 10px;
+        }
+
+        .ai-skill-title {
+            font-size: 1em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .ai-skill-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .ai-level-button {
+            flex: 1;
+            padding: 8px;
+            font-size: 0.9em;
+            font-weight: bold;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .ai-level-button:hover {
+            transform: translateY(-1px);
+        }
+
+        .ai-level-button.selected {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🔥 烤肉小遊戲 🔥</h1>
+        
+        <div class="skill-display">
+            <div style="font-size: 1.1em; font-weight: bold; margin-bottom: 10px;">玩家廚藝等級</div>
+            <div class="skill-level-selector">
+                <button class="level-button level-c" data-level="C">C級<br><span style="font-size: 0.7em;">(1-40)</span></button>
+                <button class="level-button level-b selected" data-level="B">B級<br><span style="font-size: 0.7em;">(41-70)</span></button>
+                <button class="level-button level-a" data-level="A">A級<br><span style="font-size: 0.7em;">(71-100)</span></button>
+            </div>
+            <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                當前等級：<span id="currentLevel" style="font-weight: bold;">B級</span>
+                <span id="skillValue" style="margin-left: 10px;">(55)</span>
+            </div>
+        </div>
+
+        <div class="ai-skill-selector">
+            <div class="ai-skill-title">AI對手廚藝等級</div>
+            <div style="margin-bottom: 15px;">
+                <div style="font-size: 0.9em; margin-bottom: 5px;">暖男</div>
+                <div class="ai-skill-buttons">
+                    <button class="ai-level-button" data-ai="1" data-level="C">C級</button>
+                    <button class="ai-level-button selected" data-ai="1" data-level="B">B級</button>
+                    <button class="ai-level-button" data-ai="1" data-level="A">A級</button>
+                </div>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <div style="font-size: 0.9em; margin-bottom: 5px;">高冷男</div>
+                <div class="ai-skill-buttons">
+                    <button class="ai-level-button" data-ai="2" data-level="C">C級</button>
+                    <button class="ai-level-button selected" data-ai="2" data-level="B">B級</button>
+                    <button class="ai-level-button" data-ai="2" data-level="A">A級</button>
+                </div>
+            </div>
+            <div>
+                <div style="font-size: 0.9em; margin-bottom: 5px;">體育男</div>
+                <div class="ai-skill-buttons">
+                    <button class="ai-level-button" data-ai="3" data-level="C">C級</button>
+                    <button class="ai-level-button selected" data-ai="3" data-level="B">B級</button>
+                    <button class="ai-level-button" data-ai="3" data-level="A">A級</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="round-info" id="roundInfo" style="display: none;">
+            第 <span id="currentRound">1</span> 局 / 共 5 局
+        </div>
+
+        <div class="game-info" id="gameInfo" style="display: none;">
+            <div>目標熟度：<span class="target-doneness" id="targetDoneness">-</span> 分</div>
+            <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                判定窗口：<span id="windowTime">-</span> %
+            </div>
+        </div>
+
+        <div class="countdown" id="countdown" style="display: none;"></div>
+
+        <div class="status-text" id="statusText">點擊「開始遊戲」開始</div>
+
+        <div class="progress-container" id="progressContainer" style="display: none;">
+            <div class="progress-bar-label">玩家進度</div>
+            <div class="progress-bar">
+                <div class="judge-window" id="judgeWindow"></div>
+                <div class="judge-marker" id="judgeMarker"></div>
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            
+            <div class="progress-bar-label">暖男</div>
+            <div class="ai-progress-bar">
+                <div class="ai-press-marker" id="ai1PressMarker" style="display: none;"></div>
+                <div class="ai-progress-fill ai1" id="ai1ProgressFill"></div>
+            </div>
+            
+            <div class="progress-bar-label">高冷男</div>
+            <div class="ai-progress-bar">
+                <div class="ai-press-marker" id="ai2PressMarker" style="display: none;"></div>
+                <div class="ai-progress-fill ai2" id="ai2ProgressFill"></div>
+            </div>
+            
+            <div class="progress-bar-label">體育男</div>
+            <div class="ai-progress-bar">
+                <div class="ai-press-marker" id="ai3PressMarker" style="display: none;"></div>
+                <div class="ai-progress-fill ai3" id="ai3ProgressFill"></div>
+            </div>
+        </div>
+
+        <button class="game-button" id="startButton">開始5局遊戲</button>
+        <button class="game-button" id="pressButton" style="display: none;" disabled>按下！</button>
+        <button class="game-button" id="nextRoundButton" style="display: none;">下一局</button>
+
+        <div class="result-container" id="resultContainer" style="display: none;">
+            <div class="result-title">第 <span id="resultRound">1</span> 局結果</div>
+            <div class="score-display">
+                <div>本局分數</div>
+                <div class="score-value" id="playerScore">0</div>
+            </div>
+            <div class="rating-display" id="ratingDisplay"></div>
+            <div class="ranking" id="ranking"></div>
+            <div class="total-score-display" id="totalScoreDisplay" style="display: none;">
+                <div class="total-score-title">累積分數</div>
+                <div id="totalScoreList"></div>
+            </div>
+            <div class="ai-info" id="aiInfo"></div>
+        </div>
+
+        <div class="final-ranking" id="finalRanking" style="display: none;">
+            <div class="final-ranking-title">🏆 最終排名 🏆</div>
+            <div id="finalRankingList"></div>
+        </div>
+    </div>
+
+    <script>
+        // ========== GameConfig.js 內容 ==========
+        const GameConfig = {
+          MIN_COOKING_SKILL: 1,
+          MAX_COOKING_SKILL: 100,
+          DEFAULT_COOKING_SKILL: 50,
+          MIN_WINDOW_SIZE: 2,
+          MAX_WINDOW_SIZE: 15,
+          TARGET_DONENESS: [3, 5, 7],
+          GAME_DURATION: 3.0,
+          COUNTDOWN_TIME: 3,
+          JUDGE_POSITIONS: {
+            3: 30,
+            5: 50,
+            7: 70
+          },
+          BASE_SCORE: 100,
+          SKILL_BONUS_MULTIPLIER: 20,
+          AI_BASE_SUCCESS_RATE: 0.5,  // 降低基礎成功率從60%到50%
+          AI_MAX_SUCCESS_RATE: 0.85,  // 降低最高成功率從95%到85%
+          VISUAL_HINT_LEVELS: {
+            LOW: { min: 1, max: 30 },
+            MEDIUM: { min: 31, max: 70 },
+            HIGH: { min: 71, max: 100 }
+          },
+          BASE_SPEED_VARIATION: 1.0,
+          MAX_SPEED_VARIATION: 0.5,
+        };
+
+        // 等級對應的數值範圍
+        const SKILL_LEVELS = {
+          'C': { min: 1, max: 40, default: 20 },   // C級：困難
+          'B': { min: 41, max: 70, default: 55 },  // B級：中等
+          'A': { min: 71, max: 100, default: 85 }  // A級：簡單
+        };
+
+        // 將等級轉換為數值（取該等級的中間值）
+        function levelToSkillValue(level) {
+          const levelConfig = SKILL_LEVELS[level];
+          if (!levelConfig) return SKILL_LEVELS['B'].default;
+          return levelConfig.default;
+        }
+
+        // 獲取等級的數值範圍
+        function getLevelRange(level) {
+          const levelConfig = SKILL_LEVELS[level];
+          if (!levelConfig) return { min: 0, max: 0 };
+          return { min: levelConfig.min, max: levelConfig.max };
+        }
+
+        function calculateWindowSize(cookingSkill) {
+          const { MIN_WINDOW_SIZE, MAX_WINDOW_SIZE, MAX_COOKING_SKILL } = GameConfig;
+          const skillRatio = cookingSkill / MAX_COOKING_SKILL;
+          return MIN_WINDOW_SIZE + skillRatio * (MAX_WINDOW_SIZE - MIN_WINDOW_SIZE);
+        }
+
+        function calculateSpeedVariation(cookingSkill) {
+          const { MAX_COOKING_SKILL, MAX_SPEED_VARIATION } = GameConfig;
+          const difficultyCoefficient = 1.0 - (cookingSkill / MAX_COOKING_SKILL) * MAX_SPEED_VARIATION;
+          return difficultyCoefficient;
+        }
+
+        function calculateAISuccessRate(cookingSkill) {
+          const { AI_BASE_SUCCESS_RATE, AI_MAX_SUCCESS_RATE, MAX_COOKING_SKILL } = GameConfig;
+          const skillRatio = cookingSkill / MAX_COOKING_SKILL;
+          return AI_BASE_SUCCESS_RATE + skillRatio * (AI_MAX_SUCCESS_RATE - AI_BASE_SUCCESS_RATE);
+        }
+
+        function getVisualHintLevel(cookingSkill) {
+          const { VISUAL_HINT_LEVELS } = GameConfig;
+          if (cookingSkill >= VISUAL_HINT_LEVELS.HIGH.min) return 'HIGH';
+          if (cookingSkill >= VISUAL_HINT_LEVELS.MEDIUM.min) return 'MEDIUM';
+          return 'LOW';
+        }
+
+        function calculateScore(playerProgress, targetPosition, windowSize) {
+          const { BASE_SCORE, SKILL_BONUS_MULTIPLIER, MAX_COOKING_SKILL } = GameConfig;
+          const error = Math.abs(playerProgress - targetPosition);
+          const halfWindow = windowSize / 2;
+          
+          if (error > halfWindow) {
+            return { score: 0, rating: 'FAIL' };
+          }
+
+          // 誤差越小分數越高
+          const scoreRatio = 1 - (error / halfWindow) * 0.5;
+          let score = BASE_SCORE * scoreRatio;
+
+          // 完美時機額外加成
+          if (error < halfWindow * 0.1) {
+            score = BASE_SCORE * 1.2;
+          }
+
+          let rating;
+          const errorRatio = error / halfWindow;
+          if (errorRatio < 0.1) {
+            rating = 'PERFECT';
+          } else if (errorRatio < 0.3) {
+            rating = 'GOOD';
+          } else {
+            rating = 'NORMAL';
+          }
+
+          return { score: Math.max(0, Math.round(score)), rating };
+        }
+
+        function getRatingText(rating) {
+          const ratingTexts = {
+            'PERFECT': '完美！',
+            'GOOD': '不錯！',
+            'NORMAL': '還可以',
+            'FAIL': '失敗了...'
+          };
+          return ratingTexts[rating] || '未知';
+        }
+
+        // ========== MeatRoastingGame.js 內容 ==========
+        class MeatRoastingGame {
+          constructor(playerLevel = 'B', ai1Level = 'B', ai2Level = 'B', ai3Level = 'B') {
+            // 轉換等級為數值
+            this.playerCookingSkill = levelToSkillValue(playerLevel);
+            this.playerLevel = playerLevel;
+            
+            this.ai1CookingSkill = levelToSkillValue(ai1Level);
+            this.ai1Level = ai1Level;
+            this.ai2CookingSkill = levelToSkillValue(ai2Level);
+            this.ai2Level = ai2Level;
+            this.ai3CookingSkill = levelToSkillValue(ai3Level);
+            this.ai3Level = ai3Level;
+            
+            this.windowSize = calculateWindowSize(this.playerCookingSkill);
+            this.ai1SuccessRate = calculateAISuccessRate(this.ai1CookingSkill);
+            this.ai2SuccessRate = calculateAISuccessRate(this.ai2CookingSkill);
+            this.ai3SuccessRate = calculateAISuccessRate(this.ai3CookingSkill);
+            
+            this.targetDoneness = null;
+            this.targetPosition = null; // 判定位置（百分比）
+            this.gameState = 'WAITING';
+            this.countdown = 0;
+            this.gameTime = 0;
+            this.playerPressProgress = null; // 玩家按下時的進度（百分比）
+            
+            this.aiOpponents = [
+              { name: '暖男', level: ai1Level, cookingSkill: this.ai1CookingSkill, successRate: this.ai1SuccessRate, pressProgress: null, score: 0 },
+              { name: '高冷男', level: ai2Level, cookingSkill: this.ai2CookingSkill, successRate: this.ai2SuccessRate, pressProgress: null, score: 0 },
+              { name: '體育男', level: ai3Level, cookingSkill: this.ai3CookingSkill, successRate: this.ai3SuccessRate, pressProgress: null, score: 0 }
+            ];
+            
+            this.result = null;
+          }
+
+          startGame() {
+            const randomIndex = Math.floor(Math.random() * GameConfig.TARGET_DONENESS.length);
+            this.targetDoneness = GameConfig.TARGET_DONENESS[randomIndex];
+            this.targetPosition = GameConfig.JUDGE_POSITIONS[this.targetDoneness];
+            
+            this.gameState = 'COUNTDOWN';
+            this.countdown = GameConfig.COUNTDOWN_TIME;
+            this.gameTime = 0;
+            this.playerPressProgress = null;
+            this.result = null;
+            
+            this.aiOpponents.forEach(ai => {
+              ai.pressProgress = null;
+              ai.score = 0;
+            });
+          }
+
+          update(deltaTime) {
+            if (this.gameState === 'COUNTDOWN') {
+              this.countdown -= deltaTime;
+              if (this.countdown <= 0) {
+                this.gameState = 'PLAYING';
+                this.countdown = 0;
+              }
+            } else if (this.gameState === 'PLAYING') {
+              this.gameTime += deltaTime;
+              
+              if (this.gameTime >= GameConfig.GAME_DURATION) {
+                this.finishGame();
+              }
+              
+              this.updateAIOpponents();
+            }
+          }
+
+          updateAIOpponents() {
+            const currentProgress = (this.gameTime / GameConfig.GAME_DURATION) * 100;
+            
+            this.aiOpponents.forEach((ai, index) => {
+              if (ai.pressProgress === null && currentProgress >= this.targetPosition) {
+                const random = Math.random();
+                // 使用該AI自己的成功率
+                if (random <= ai.successRate) {
+                  // AI成功：在窗口範圍內按下
+                  // AI的窗口大小根據其廚藝等級計算
+                  const aiWindowSize = calculateWindowSize(ai.cookingSkill);
+                  const halfWindow = aiWindowSize / 2;
+                  // 增加誤差範圍從0.6到0.8，讓AI更不精準
+                  const aiError = (Math.random() - 0.5) * halfWindow * 0.8;
+                  ai.pressProgress = this.targetPosition + aiError;
+                  
+                  const error = Math.abs(ai.pressProgress - this.targetPosition);
+                  const aiScore = calculateScore(ai.pressProgress, this.targetPosition, aiWindowSize);
+                  ai.score = aiScore.score;
+                } else {
+                  // AI失敗：在窗口範圍外按下
+                  const aiWindowSize = calculateWindowSize(ai.cookingSkill);
+                  // 增加失敗時的誤差範圍，讓AI更容易失敗
+                  const failError = aiWindowSize * (0.6 + Math.random() * 0.6);
+                  ai.pressProgress = this.targetPosition + (Math.random() > 0.5 ? failError : -failError);
+                  ai.score = 0;
+                }
+              }
+            });
+          }
+
+          playerPress() {
+            if (this.gameState === 'PLAYING' && this.playerPressProgress === null) {
+              this.playerPressProgress = (this.gameTime / GameConfig.GAME_DURATION) * 100;
+              this.finishGame();
+            }
+          }
+
+          finishGame() {
+            if (this.gameState !== 'PLAYING') return;
+            
+            this.gameState = 'FINISHED';
+            
+            let playerScore = 0;
+            let playerRating = 'FAIL';
+            
+            if (this.playerPressProgress !== null) {
+              const scoreResult = calculateScore(this.playerPressProgress, this.targetPosition, this.windowSize);
+              playerScore = scoreResult.score;
+              playerRating = scoreResult.rating;
+            }
+            
+            this.aiOpponents.forEach(ai => {
+              if (ai.pressProgress === null) {
+                ai.pressProgress = 100;
+                ai.score = 0;
+              }
+            });
+            
+            const allScores = [
+              { name: '玩家', score: playerScore, rating: playerRating },
+              ...this.aiOpponents.map(ai => ({ name: ai.name, score: ai.score, rating: ai.score > 0 ? 'GOOD' : 'FAIL' }))
+            ];
+            
+            allScores.sort((a, b) => b.score - a.score);
+            
+            this.result = {
+              targetDoneness: this.targetDoneness,
+              targetPosition: this.targetPosition,
+              playerScore,
+              playerRating,
+              playerProgress: this.playerPressProgress,
+              progressError: this.playerPressProgress !== null ? Math.abs(this.playerPressProgress - this.targetPosition) : null,
+              aiOpponents: this.aiOpponents.map(ai => ({
+                name: ai.name,
+                score: ai.score,
+                pressProgress: ai.pressProgress
+              })),
+              ranking: allScores.map((item, index) => ({
+                rank: index + 1,
+                name: item.name,
+                score: item.score,
+                rating: item.rating
+              }))
+            };
+          }
+
+          getProgress() {
+            if (this.gameState !== 'PLAYING') return 0;
+            return Math.min(100, (this.gameTime / GameConfig.GAME_DURATION) * 100);
+          }
+
+          getAIProgress(aiIndex) {
+            if (this.gameState !== 'PLAYING') return 0;
+            if (aiIndex < 0 || aiIndex >= this.aiOpponents.length) return 0;
+            return Math.min(100, (this.gameTime / GameConfig.GAME_DURATION) * 100);
+          }
+
+          getAIPressProgress(aiIndex) {
+            if (aiIndex < 0 || aiIndex >= this.aiOpponents.length) return null;
+            const ai = this.aiOpponents[aiIndex];
+            return ai.pressProgress;
+          }
+        }
+
+        // ========== 主遊戲邏輯 ==========
+        let game = null;
+        let animationFrameId = null;
+        let lastTime = 0;
+        
+        // 從網址讀取主選單傳入的等級（可選）
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlPlayerLevel = urlParams.get('playerCooking');
+        const urlAi1Level = urlParams.get('warmCooking');
+        const urlAi2Level = urlParams.get('coldCooking');
+        const urlAi3Level = urlParams.get('sportCooking');
+
+        function normalizeLevel(level) {
+          return level === 'A' || level === 'B' || level === 'C' ? level : null;
+        }
+
+        // 當前選擇的等級（預設 B，若有主選單參數則覆蓋）
+        let playerLevel = normalizeLevel(urlPlayerLevel) || 'B';
+        let ai1Level = normalizeLevel(urlAi1Level) || 'B';
+        let ai2Level = normalizeLevel(urlAi2Level) || 'B';
+        let ai3Level = normalizeLevel(urlAi3Level) || 'B';
+        
+        // 5局遊戲狀態
+        let gameSession = {
+          currentRound: 0,
+          totalRounds: 5,
+          totalScores: {
+            '玩家': 0,
+            '暖男': 0,
+            '高冷男': 0,
+            '體育男': 0
+          },
+          roundScores: [] // 記錄每局分數
+        };
+
+        const currentLevel = document.getElementById('currentLevel');
+        const skillValue = document.getElementById('skillValue');
+        const startButton = document.getElementById('startButton');
+        const pressButton = document.getElementById('pressButton');
+        const nextRoundButton = document.getElementById('nextRoundButton');
+        
+        // 玩家等級選擇按鈕
+        const playerLevelButtons = document.querySelectorAll('.level-button');
+        playerLevelButtons.forEach(button => {
+          button.addEventListener('click', () => {
+            playerLevelButtons.forEach(btn => btn.classList.remove('selected'));
+            button.classList.add('selected');
+            playerLevel = button.dataset.level;
+            const skillVal = levelToSkillValue(playerLevel);
+            currentLevel.textContent = playerLevel + '級';
+            skillValue.textContent = '(' + skillVal + ')';
+          });
+        });
+
+        // AI等級選擇按鈕
+        const aiLevelButtons = document.querySelectorAll('.ai-level-button');
+        aiLevelButtons.forEach(button => {
+          button.addEventListener('click', () => {
+            const aiNum = button.dataset.ai;
+            const level = button.dataset.level;
+            // 移除同組其他按鈕的選中狀態
+            document.querySelectorAll(`.ai-level-button[data-ai="${aiNum}"]`).forEach(btn => {
+              btn.classList.remove('selected');
+            });
+            button.classList.add('selected');
+            
+            if (aiNum === '1') {
+              ai1Level = level;
+            } else if (aiNum === '2') {
+              ai2Level = level;
+            } else if (aiNum === '3') {
+              ai3Level = level;
+            }
+          });
+        });
+
+        // 根據目前的等級（可能由主選單帶入）初始化按鈕選取狀態
+        function applyInitialSelection() {
+          // 玩家
+          const playerSkillVal = levelToSkillValue(playerLevel);
+          currentLevel.textContent = playerLevel + '級';
+          skillValue.textContent = '(' + playerSkillVal + ')';
+          playerLevelButtons.forEach(btn => {
+            btn.classList.toggle('selected', btn.dataset.level === playerLevel);
+          });
+
+          // 三個 AI
+          aiLevelButtons.forEach(button => {
+            const aiNum = button.dataset.ai;
+            const level = button.dataset.level;
+            const currentLevelForAi =
+              aiNum === '1' ? ai1Level :
+              aiNum === '2' ? ai2Level :
+              ai3Level;
+            button.classList.toggle('selected', level === currentLevelForAi);
+          });
+        }
+
+        applyInitialSelection();
+        const gameInfo = document.getElementById('gameInfo');
+        const roundInfo = document.getElementById('roundInfo');
+        const currentRound = document.getElementById('currentRound');
+        const targetDoneness = document.getElementById('targetDoneness');
+        const windowTime = document.getElementById('windowTime');
+        const countdown = document.getElementById('countdown');
+        const statusText = document.getElementById('statusText');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const judgeMarker = document.getElementById('judgeMarker');
+        const judgeWindow = document.getElementById('judgeWindow');
+        const skillDisplay = document.querySelector('.skill-display');
+        const aiSkillSelector = document.querySelector('.ai-skill-selector');
+        const ai1ProgressFill = document.getElementById('ai1ProgressFill');
+        const ai2ProgressFill = document.getElementById('ai2ProgressFill');
+        const ai3ProgressFill = document.getElementById('ai3ProgressFill');
+        const ai1PressMarker = document.getElementById('ai1PressMarker');
+        const ai2PressMarker = document.getElementById('ai2PressMarker');
+        const ai3PressMarker = document.getElementById('ai3PressMarker');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultRound = document.getElementById('resultRound');
+        const playerScore = document.getElementById('playerScore');
+        const ratingDisplay = document.getElementById('ratingDisplay');
+        const ranking = document.getElementById('ranking');
+        const totalScoreDisplay = document.getElementById('totalScoreDisplay');
+        const totalScoreList = document.getElementById('totalScoreList');
+        const aiInfo = document.getElementById('aiInfo');
+        const finalRanking = document.getElementById('finalRanking');
+        const finalRankingList = document.getElementById('finalRankingList');
+
+
+        // 開始5局遊戲
+        startButton.addEventListener('click', () => {
+            // 重置遊戲會話
+            gameSession.currentRound = 0;
+            gameSession.totalScores = {
+              '玩家': 0,
+              '暖男': 0,
+              '高冷男': 0,
+              '體育男': 0
+            };
+            gameSession.roundScores = [];
+            
+            // 隱藏設定面板
+            skillDisplay.style.display = 'none';
+            aiSkillSelector.style.display = 'none';
+            
+            // 隱藏最終排名
+            finalRanking.style.display = 'none';
+            
+            // 開始第一局
+            startNextRound();
+        });
+
+        // 開始下一局
+        function startNextRound() {
+            gameSession.currentRound++;
+            game = new MeatRoastingGame(playerLevel, ai1Level, ai2Level, ai3Level);
+            game.startGame();
+
+            startButton.style.display = 'none';
+            nextRoundButton.style.display = 'none';
+            pressButton.style.display = 'block';
+            gameInfo.style.display = 'block';
+            roundInfo.style.display = 'block';
+            progressContainer.style.display = 'block';
+            resultContainer.style.display = 'none';
+            totalScoreDisplay.style.display = 'none';
+
+            currentRound.textContent = gameSession.currentRound;
+            targetDoneness.textContent = game.targetDoneness;
+            windowTime.textContent = game.windowSize.toFixed(1) + '%';
+            
+            // 設置判定位置和窗口
+            const targetPos = game.targetPosition;
+            const halfWindow = game.windowSize / 2;
+            judgeMarker.style.left = targetPos + '%';
+            judgeWindow.style.left = (targetPos - halfWindow) + '%';
+            judgeWindow.style.width = game.windowSize + '%';
+
+            // 重置AI進度條
+            ai1ProgressFill.style.width = '0%';
+            ai2ProgressFill.style.width = '0%';
+            ai3ProgressFill.style.width = '0%';
+            ai1PressMarker.style.display = 'none';
+            ai2PressMarker.style.display = 'none';
+            ai3PressMarker.style.display = 'none';
+
+            lastTime = performance.now() / 1000;
+            gameLoop();
+        }
+
+        // 下一局按鈕
+        nextRoundButton.addEventListener('click', () => {
+            if (gameSession.currentRound < gameSession.totalRounds) {
+                startNextRound();
+            }
+        });
+
+        // 按下按鈕
+        pressButton.addEventListener('click', () => {
+            if (game && game.gameState === 'PLAYING') {
+                game.playerPress();
+            }
+        });
+
+        // 遊戲循環
+        function gameLoop(currentTime = 0) {
+            if (!game) return;
+
+            currentTime = currentTime / 1000 || performance.now() / 1000;
+            const deltaTime = Math.min(0.1, currentTime - lastTime);
+            lastTime = currentTime;
+
+            game.update(deltaTime);
+
+            // 更新UI
+            updateUI();
+
+            // 繼續循環或停止
+            if (game.gameState === 'FINISHED') {
+                showResult();
+                cancelAnimationFrame(animationFrameId);
+            } else {
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        function updateUI() {
+            if (game.gameState === 'COUNTDOWN') {
+                countdown.style.display = 'block';
+                countdown.textContent = Math.ceil(game.countdown);
+                statusText.textContent = '準備...';
+                pressButton.disabled = true;
+            } else if (game.gameState === 'PLAYING') {
+                countdown.style.display = 'none';
+                statusText.textContent = '在綠色窗口範圍內按下按鈕！';
+                pressButton.disabled = false;
+
+                // 更新玩家進度條（百分比）
+                const progress = game.getProgress();
+                progressFill.style.width = progress + '%';
+
+                // 更新AI1進度條
+                const ai1Progress = game.getAIProgress(0);
+                ai1ProgressFill.style.width = ai1Progress + '%';
+                
+                const ai1PressProgress = game.getAIPressProgress(0);
+                if (ai1PressProgress !== null) {
+                    ai1PressMarker.style.left = ai1PressProgress + '%';
+                    ai1PressMarker.style.display = 'block';
+                }
+
+                // 更新AI2進度條
+                const ai2Progress = game.getAIProgress(1);
+                ai2ProgressFill.style.width = ai2Progress + '%';
+                
+                const ai2PressProgress = game.getAIPressProgress(1);
+                if (ai2PressProgress !== null) {
+                    ai2PressMarker.style.left = ai2PressProgress + '%';
+                    ai2PressMarker.style.display = 'block';
+                }
+
+                // 更新AI3進度條
+                const ai3Progress = game.getAIProgress(2);
+                ai3ProgressFill.style.width = ai3Progress + '%';
+                
+                const ai3PressProgress = game.getAIPressProgress(2);
+                if (ai3PressProgress !== null) {
+                    ai3PressMarker.style.left = ai3PressProgress + '%';
+                    ai3PressMarker.style.display = 'block';
+                }
+            } else {
+                // 重置AI進度條
+                ai1ProgressFill.style.width = '0%';
+                ai2ProgressFill.style.width = '0%';
+                ai3ProgressFill.style.width = '0%';
+                ai1PressMarker.style.display = 'none';
+                ai2PressMarker.style.display = 'none';
+                ai3PressMarker.style.display = 'none';
+            }
+        }
+
+        function showResult() {
+            pressButton.style.display = 'none';
+            resultContainer.style.display = 'block';
+            totalScoreDisplay.style.display = 'block';
+
+            // 記錄本局分數
+            const roundScore = {
+                round: gameSession.currentRound,
+                scores: {
+                    '玩家': game.result.playerScore,
+                    '暖男': game.result.aiOpponents[0].score,
+                    '高冷男': game.result.aiOpponents[1].score,
+                    '體育男': game.result.aiOpponents[2].score
+                }
+            };
+            gameSession.roundScores.push(roundScore);
+
+            // 累積分數
+            gameSession.totalScores['玩家'] += game.result.playerScore;
+            gameSession.totalScores['暖男'] += game.result.aiOpponents[0].score;
+            gameSession.totalScores['高冷男'] += game.result.aiOpponents[1].score;
+            gameSession.totalScores['體育男'] += game.result.aiOpponents[2].score;
+
+            resultRound.textContent = gameSession.currentRound;
+            playerScore.textContent = game.result.playerScore;
+            
+            const ratingClass = 'rating-' + game.result.playerRating.toLowerCase();
+            ratingDisplay.className = 'rating-display ' + ratingClass;
+            ratingDisplay.textContent = getRatingText(game.result.playerRating);
+
+            // 顯示本局排名（包含等級信息）
+            ranking.innerHTML = '';
+            game.result.ranking.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'ranking-item' + (item.name === '玩家' ? ' player' : '');
+                let levelInfo = '';
+                if (item.name === '玩家') {
+                    levelInfo = ` (${game.playerLevel}級)`;
+                } else {
+                    let aiIndex = 0;
+                    if (item.name === '暖男') aiIndex = 0;
+                    else if (item.name === '高冷男') aiIndex = 1;
+                    else if (item.name === '體育男') aiIndex = 2;
+                    levelInfo = ` (${game.aiOpponents[aiIndex].level}級)`;
+                }
+                div.innerHTML = `
+                    <span>${item.rank}. ${item.name}${levelInfo}</span>
+                    <span>${item.score} 分 (${getRatingText(item.rating)})</span>
+                `;
+                ranking.appendChild(div);
+            });
+
+            // 顯示累積分數
+            totalScoreList.innerHTML = '';
+            const totalScoresArray = [
+                { name: '玩家', score: gameSession.totalScores['玩家'] },
+                { name: '暖男', score: gameSession.totalScores['暖男'] },
+                { name: '高冷男', score: gameSession.totalScores['高冷男'] },
+                { name: '體育男', score: gameSession.totalScores['體育男'] }
+            ];
+            totalScoresArray.sort((a, b) => b.score - a.score);
+            
+            totalScoresArray.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'total-score-item' + (item.name === '玩家' ? ' player' : '');
+                div.innerHTML = `
+                    <span>${item.name}</span>
+                    <span><strong>${item.score}</strong> 分</span>
+                `;
+                totalScoreList.appendChild(div);
+            });
+
+            // 顯示AI信息
+            aiInfo.innerHTML = '<strong>AI對手詳情：</strong><br>';
+            game.result.aiOpponents.forEach((ai, index) => {
+                const aiOpponent = game.aiOpponents[index];
+                const progressError = Math.abs(ai.pressProgress - game.result.targetPosition);
+                aiInfo.innerHTML += `${ai.name} (${aiOpponent.level}級): ${ai.score}分 (進度: ${ai.pressProgress.toFixed(1)}%, 誤差: ${progressError.toFixed(1)}%)<br>`;
+            });
+
+            if (game.result.progressError !== null) {
+                aiInfo.innerHTML += `<br>你的進度: ${game.result.playerProgress.toFixed(1)}%<br>`;
+                aiInfo.innerHTML += `目標位置: ${game.result.targetPosition}%<br>`;
+                aiInfo.innerHTML += `誤差: ${game.result.progressError.toFixed(1)}%`;
+            }
+
+            // 檢查是否完成5局
+            if (gameSession.currentRound >= gameSession.totalRounds) {
+                showFinalRanking();
+            } else {
+                nextRoundButton.style.display = 'block';
+            }
+        }
+
+        function showFinalRanking() {
+            resultContainer.style.display = 'none';
+            totalScoreDisplay.style.display = 'none';
+            finalRanking.style.display = 'block';
+            // 不再提供「再玩一次」按鈕，僅自動返回主頁
+
+            // 計算最終排名
+            const finalScores = [
+                { name: '玩家', score: gameSession.totalScores['玩家'] },
+                { name: '暖男', score: gameSession.totalScores['暖男'] },
+                { name: '高冷男', score: gameSession.totalScores['高冷男'] },
+                { name: '體育男', score: gameSession.totalScores['體育男'] }
+            ];
+            finalScores.sort((a, b) => b.score - a.score);
+
+            // 依據烤肉（廚藝）成績更新女主角好感度
+            const rankingForAffection = finalScores.map((item, index) => ({
+                name: item.name,
+                rank: index + 1
+            }));
+            applyAffectionFromRanking('cooking', rankingForAffection);
+
+            finalRankingList.innerHTML = '';
+            finalScores.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'final-ranking-item' + (index === 0 ? ' winner' : '');
+                const rankEmoji = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
+                div.innerHTML = `
+                    <div>
+                        <span class="rank-number">${rankEmoji} ${index + 1}</span>
+                        <span>${item.name}</span>
+                    </div>
+                    <div style="font-size: 1.3em; font-weight: bold;">${item.score} 分</div>
+                `;
+                finalRankingList.appendChild(div);
+            });
+
+            // 小遊戲結束數秒後自動回到主頁並前進下一個時段
+            setTimeout(() => {
+                window.location.href = '../index.html?autoNext=1';
+            }, 3000);
+        }
+
+        // ====== 女主角好感度系統（依照烤肉成績與廚藝加成） ======
+        const AFFECTION_KEY = 'forbiddenShow_affection';
+        const AFFECTION_TODAY_KEY = 'forbiddenShow_affection_today';
+        const HEROINES = {
+          '搖滾少女': { charm: 'A', cooking: 'C', stamina: 'C' },
+          '清純少女': { charm: 'C', cooking: 'A', stamina: 'C' },
+          '運動少女': { charm: 'C', cooking: 'C', stamina: 'A' },
+          '高冷大姐姐': { charm: 'B', cooking: 'A', stamina: 'C' },
+          '地雷女': { charm: 'A', cooking: 'C', stamina: 'B' }
+        };
+
+        function loadAffection() {
+          try {
+            const raw = localStorage.getItem(AFFECTION_KEY);
+            if (raw) return JSON.parse(raw);
+          } catch (e) {}
+          const base = {};
+          const players = ['玩家', '暖男', '高冷男', '體育男'];
+          Object.keys(HEROINES).forEach(hero => {
+            base[hero] = {};
+            players.forEach(p => { base[hero][p] = 0; });
+          });
+          return base;
+        }
+
+        function saveAffection(state) {
+          localStorage.setItem(AFFECTION_KEY, JSON.stringify(state));
+        }
+
+        function loadAffectionToday() {
+          try {
+            const raw = localStorage.getItem(AFFECTION_TODAY_KEY);
+            if (raw) return JSON.parse(raw);
+          } catch (e) {}
+          const base = {};
+          const players = ['玩家', '暖男', '高冷男', '體育男'];
+          Object.keys(HEROINES).forEach(hero => {
+            base[hero] = {};
+            players.forEach(p => { base[hero][p] = 0; });
+          });
+          return base;
+        }
+
+        function saveAffectionToday(state) {
+          localStorage.setItem(AFFECTION_TODAY_KEY, JSON.stringify(state));
+        }
+
+        function heroineBonusLevel(heroName, gameType) {
+          const h = HEROINES[heroName];
+          if (!h) return 'C';
+          if (gameType === 'cooking') return h.cooking;
+          if (gameType === 'charm') return h.charm;
+          return h.stamina;
+        }
+
+        function calcAffectionDelta(level, rank) {
+          const baseByRank = { 1: 3, 2: 2, 3: 1, 4: 0 };
+          const base = baseByRank[rank] || 0;
+          const mult = level === 'A' ? 2 : level === 'B' ? 1 : 0.5;
+          return Math.round(base * mult);
+        }
+
+        function applyAffectionFromRanking(gameType, rankingArray) {
+          const affectionTotal = loadAffection();
+          const affectionToday = loadAffectionToday();
+
+          rankingArray.forEach(item => {
+            const participant = item.name;
+            const rank = item.rank;
+            Object.keys(HEROINES).forEach(hero => {
+              const lvl = heroineBonusLevel(hero, gameType);
+              const delta = calcAffectionDelta(lvl, rank);
+
+              if (!affectionTotal[hero]) affectionTotal[hero] = {};
+              if (typeof affectionTotal[hero][participant] !== 'number') affectionTotal[hero][participant] = 0;
+              affectionTotal[hero][participant] += delta;
+
+              if (!affectionToday[hero]) affectionToday[hero] = {};
+              if (typeof affectionToday[hero][participant] !== 'number') affectionToday[hero][participant] = 0;
+              affectionToday[hero][participant] += delta;
+            });
+          });
+
+          saveAffection(affectionTotal);
+          saveAffectionToday(affectionToday);
+        }
+    </script>
+</body>
+</html>

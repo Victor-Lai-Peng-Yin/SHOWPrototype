@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>舞蹈節拍秀</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 1200px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+
+        /* 設定面板 */
+        .setup-panel {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .charm-selector {
+            margin: 20px 0;
+        }
+
+        .charm-selector h3 {
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        .level-button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .level-button:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .level-button.selected {
+            background: #667eea;
+            color: white;
+        }
+
+        .ai-charm-selector {
+            margin: 15px 0;
+        }
+
+        .ai-charm-selector h4 {
+            margin-bottom: 8px;
+            color: #666;
+        }
+
+        .start-button {
+            padding: 15px 40px;
+            font-size: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.2s;
+        }
+
+        .start-button:hover {
+            transform: scale(1.05);
+        }
+
+        /* 遊戲區域 */
+        .game-area {
+            display: none;
+            position: relative;
+        }
+
+        .stage {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            height: 500px;
+            overflow: hidden;
+        }
+
+        /* 角色區域 */
+        .dancers-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            height: 200px;
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+        }
+
+        .dancer {
+            width: 80px;
+            height: 120px;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px 10px 0 0;
+            position: relative;
+            transition: transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .dancer.player {
+            background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+            box-shadow: 0 0 20px rgba(79, 172, 254, 0.5);
+        }
+
+        .dancer.dancing {
+            animation: dance 0.3s ease-in-out;
+        }
+
+        @keyframes dance {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-10px) scale(1.1); }
+        }
+
+        .dancer-name {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        /* 節拍判定線 */
+        .judgment-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            z-index: 10;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+
+        /* 完美判定區域（綠色提示） */
+        .perfect-zone {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 0;
+            background: rgba(0, 255, 0, 0.3);
+            border-top: 2px solid rgba(0, 255, 0, 0.8);
+            border-bottom: 2px solid rgba(0, 255, 0, 0.8);
+            z-index: 9;
+            transition: height 0.2s, opacity 0.2s;
+            pointer-events: none;
+        }
+
+        /* 當節拍接近完美判定時，判定線變綠 */
+        .judgment-line.perfect-ready {
+            background: rgba(0, 255, 0, 0.9);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.8);
+        }
+
+        /* 節拍提示區域 */
+        .beat-track {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 25%; /* 每個區域佔25%寬度 */
+        }
+
+        /* 玩家區域（1號） */
+        #playerBeatTrack {
+            left: 0%;
+        }
+
+        /* 暖男區域（2號） */
+        #ai1BeatTrack {
+            left: 25%;
+        }
+
+        /* 高冷男區域（3號） */
+        #ai2BeatTrack {
+            left: 50%;
+        }
+
+        /* 體育男區域（4號） */
+        #ai3BeatTrack {
+            left: 75%;
+        }
+
+        /* 區域分隔線 */
+        .region-divider {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(255, 255, 255, 0.5);
+            z-index: 5;
+        }
+
+        .region-divider.divider-1 {
+            left: 25%;
+        }
+
+        .region-divider.divider-2 {
+            left: 50%;
+        }
+
+        .region-divider.divider-3 {
+            left: 75%;
+        }
+
+        .beat-arrow {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s;
+        }
+
+        .beat-arrow.active {
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+        }
+
+        .beat-arrow.hit {
+            animation: hitEffect 0.3s;
+        }
+
+        @keyframes hitEffect {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        /* 判定效果 */
+        .judgment-text {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+            pointer-events: none;
+            z-index: 20;
+            animation: judgmentPop 0.5s;
+        }
+
+        @keyframes judgmentPop {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+
+        .judgment-text.perfect {
+            color: #ffd700;
+        }
+
+        .judgment-text.good {
+            color: #4facfe;
+        }
+
+        .judgment-text.miss {
+            color: #ff4757;
+        }
+
+        /* 分數顯示 */
+        .score-display {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .score-item {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 15px 25px;
+            border-radius: 10px;
+            margin: 5px;
+            min-width: 150px;
+        }
+
+        .score-item h3 {
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .score-item .score-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .combo-display {
+            text-align: center;
+            font-size: 20px;
+            color: #ffd700;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        /* 輪次資訊 */
+        .round-info {
+            text-align: center;
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        .total-score-display {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+        }
+
+        .total-score-display h3 {
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .total-scores {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+
+        .total-score-item {
+            margin: 5px;
+            padding: 10px 20px;
+            background: white;
+            border-radius: 8px;
+            min-width: 120px;
+        }
+
+        /* 結果顯示 */
+        .result-panel {
+            display: none;
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .final-ranking {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .final-ranking h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 10px;
+            font-size: 18px;
+        }
+
+        .ranking-item.first {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            font-weight: bold;
+        }
+
+        .ranking-item.second {
+            background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+        }
+
+        .ranking-item.third {
+            background: linear-gradient(135deg, #cd7f32 0%, #e6a857 100%);
+        }
+
+        .ranking-item.fourth {
+            background: #f0f0f0;
+        }
+
+        .restart-button {
+            display: none;
+        }
+
+        .next-round-button {
+            padding: 15px 40px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .next-round-button:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>💃 舞蹈節拍秀 🎵</h1>
+
+        <!-- 設定面板 -->
+        <div class="setup-panel" id="setupPanel">
+            <div class="charm-selector">
+                <h3>玩家魅力值等級</h3>
+                <button class="level-button" data-level="A">A級</button>
+                <button class="level-button" data-level="B">B級</button>
+                <button class="level-button" data-level="C">C級</button>
+            </div>
+
+            <div class="ai-charm-selector">
+                <h4>暖男 魅力值</h4>
+                <button class="level-button ai-level-button" data-ai="暖男" data-level="A">A</button>
+                <button class="level-button ai-level-button" data-ai="暖男" data-level="B">B</button>
+                <button class="level-button ai-level-button" data-ai="暖男" data-level="C">C</button>
+            </div>
+
+            <div class="ai-charm-selector">
+                <h4>高冷男 魅力值</h4>
+                <button class="level-button ai-level-button" data-ai="高冷男" data-level="A">A</button>
+                <button class="level-button ai-level-button" data-ai="高冷男" data-level="B">B</button>
+                <button class="level-button ai-level-button" data-ai="高冷男" data-level="C">C</button>
+            </div>
+
+            <div class="ai-charm-selector">
+                <h4>體育男 魅力值</h4>
+                <button class="level-button ai-level-button" data-ai="體育男" data-level="A">A</button>
+                <button class="level-button ai-level-button" data-ai="體育男" data-level="B">B</button>
+                <button class="level-button ai-level-button" data-ai="體育男" data-level="C">C</button>
+            </div>
+
+            <button class="start-button" id="startButton">開始比賽</button>
+        </div>
+
+        <!-- 遊戲區域 -->
+        <div class="game-area" id="gameArea">
+            <div class="round-info" id="roundInfo" style="display: none;"></div>
+            
+            <div class="score-display">
+                <div class="score-item">
+                    <h3>玩家</h3>
+                    <div class="score-value" id="playerScore">0</div>
+                </div>
+                <div class="score-item">
+                    <h3>暖男</h3>
+                    <div class="score-value" id="ai1Score">0</div>
+                </div>
+                <div class="score-item">
+                    <h3>高冷男</h3>
+                    <div class="score-value" id="ai2Score">0</div>
+                </div>
+                <div class="score-item">
+                    <h3>體育男</h3>
+                    <div class="score-value" id="ai3Score">0</div>
+                </div>
+            </div>
+
+            <div class="combo-display" id="comboDisplay">Combo: 0</div>
+            <div class="current-turn-display" id="currentTurnDisplay" style="text-align: center; font-size: 24px; font-weight: bold; color: #667eea; margin-bottom: 15px;">當前回合：玩家</div>
+
+            <div class="stage" id="stage">
+                <!-- 完美判定區域（綠色提示） -->
+                <div class="perfect-zone" id="perfectZone"></div>
+                
+                <div class="judgment-line" id="judgmentLine"></div>
+                
+                <!-- 區域分隔線 -->
+                <div class="region-divider divider-1"></div>
+                <div class="region-divider divider-2"></div>
+                <div class="region-divider divider-3"></div>
+                
+                <!-- 玩家節拍軌道（1號區域） -->
+                <div class="beat-track" id="playerBeatTrack" data-player="玩家"></div>
+                
+                <!-- AI節拍軌道 -->
+                <!-- 暖男節拍軌道（2號區域） -->
+                <div class="beat-track" id="ai1BeatTrack" data-player="暖男"></div>
+                <!-- 高冷男節拍軌道（3號區域） -->
+                <div class="beat-track" id="ai2BeatTrack" data-player="高冷男"></div>
+                <!-- 體育男節拍軌道（4號區域） -->
+                <div class="beat-track" id="ai3BeatTrack" data-player="體育男"></div>
+                
+                <div class="dancers-container">
+                    <div class="dancer player" id="playerDancer">
+                        <div class="dancer-name">玩家</div>
+                    </div>
+                    <div class="dancer" id="ai1Dancer">
+                        <div class="dancer-name">暖男</div>
+                    </div>
+                    <div class="dancer" id="ai2Dancer">
+                        <div class="dancer-name">高冷男</div>
+                    </div>
+                    <div class="dancer" id="ai3Dancer">
+                        <div class="dancer-name">體育男</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="total-score-display" id="totalScoreDisplay">
+                <h3>累積總分</h3>
+                <div class="total-scores">
+                    <div class="total-score-item">
+                        <strong>玩家:</strong> <span id="totalPlayerScore">0</span>
+                    </div>
+                    <div class="total-score-item">
+                        <strong>暖男:</strong> <span id="totalAi1Score">0</span>
+                    </div>
+                    <div class="total-score-item">
+                        <strong>高冷男:</strong> <span id="totalAi2Score">0</span>
+                    </div>
+                    <div class="total-score-item">
+                        <strong>體育男:</strong> <span id="totalAi3Score">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="next-round-button" id="nextRoundButton" style="display: none;">下一輪</button>
+        </div>
+
+        <!-- 結果面板 -->
+        <div class="result-panel" id="resultPanel">
+            <div class="final-ranking">
+                <h2>🏆 最終排名 🏆</h2>
+                <div id="rankingList"></div>
+            </div>
+            <button class="restart-button" id="restartButton">再玩一次</button>
+        </div>
+    </div>
+
+    <script>
+        // 遊戲配置
+        const GameConfig = {
+            TOTAL_ROUNDS: 1,
+            BEATS_PER_ROUND: 15,
+            BEAT_SPAWN_INTERVAL: 800, // 毫秒
+            BEAT_FALL_SPEED: 3, // 像素/幀
+            JUDGMENT_LINE_Y: 400, // 判定線Y位置（從頂部算起）
+            
+            // 方向鍵映射
+            ARROWS: ['↑', '↓', '←', '→'],
+            ARROW_KEYS: {
+                'ArrowUp': '↑',
+                'ArrowDown': '↓',
+                'ArrowLeft': '←',
+                'ArrowRight': '→'
+            },
+            
+            // 魅力值等級配置
+            CHARM_LEVELS: {
+                'A': {
+                    judgmentWindow: 40, // 判定窗口（像素）
+                    scoreMultiplier: 1.5, // 分數倍數
+                    comboMultiplier: 1.3, // Combo分數倍數
+                    aiSuccessRate: { min: 0.60, max: 0.75 } // AI成功率
+                },
+                'B': {
+                    judgmentWindow: 30,
+                    scoreMultiplier: 1.2,
+                    comboMultiplier: 1.15,
+                    aiSuccessRate: { min: 0.70, max: 0.85 }
+                },
+                'C': {
+                    judgmentWindow: 20,
+                    scoreMultiplier: 1.0,
+                    comboMultiplier: 1.0,
+                    aiSuccessRate: { min: 0.80, max: 0.95 }
+                }
+            },
+            
+            // 判定分數
+            SCORES: {
+                perfect: 100,
+                good: 50,
+                miss: 0
+            }
+        };
+
+        // 玩家順序
+        const PLAYER_ORDER = ['玩家', '暖男', '高冷男', '體育男'];
+
+        // 女主角好感度設定（魅力 / 廚藝 / 體力）
+        const AFFECTION_KEY = 'forbiddenShow_affection';
+        const AFFECTION_TODAY_KEY = 'forbiddenShow_affection_today';
+        const HEROINES = {
+            '搖滾少女': { charm: 'A', cooking: 'C', stamina: 'C' },
+            '清純少女': { charm: 'C', cooking: 'A', stamina: 'C' },
+            '運動少女': { charm: 'C', cooking: 'C', stamina: 'A' },
+            '高冷大姐姐': { charm: 'B', cooking: 'A', stamina: 'C' },
+            '地雷女': { charm: 'A', cooking: 'C', stamina: 'B' }
+        };
+
+        function loadAffection() {
+            try {
+                const raw = localStorage.getItem(AFFECTION_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            const base = {};
+            const players = ['玩家', '暖男', '高冷男', '體育男'];
+            Object.keys(HEROINES).forEach(hero => {
+                base[hero] = {};
+                players.forEach(p => { base[hero][p] = 0; });
+            });
+            return base;
+        }
+
+        function saveAffection(state) {
+            localStorage.setItem(AFFECTION_KEY, JSON.stringify(state));
+        }
+
+        function loadAffectionToday() {
+            try {
+                const raw = localStorage.getItem(AFFECTION_TODAY_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            const base = {};
+            const players = ['玩家', '暖男', '高冷男', '體育男'];
+            Object.keys(HEROINES).forEach(hero => {
+                base[hero] = {};
+                players.forEach(p => { base[hero][p] = 0; });
+            });
+            return base;
+        }
+
+        function saveAffectionToday(state) {
+            localStorage.setItem(AFFECTION_TODAY_KEY, JSON.stringify(state));
+        }
+
+        function heroineBonusLevel(heroName, gameType) {
+            const h = HEROINES[heroName];
+            if (!h) return 'C';
+            if (gameType === 'cooking') return h.cooking;
+            if (gameType === 'charm') return h.charm;
+            return h.stamina;
+        }
+
+        function calcAffectionDelta(level, rank) {
+            const baseByRank = { 1: 3, 2: 2, 3: 1, 4: 0 };
+            const base = baseByRank[rank] || 0;
+            const mult = level === 'A' ? 2 : level === 'B' ? 1 : 0.5;
+            return Math.round(base * mult);
+        }
+
+        function applyAffectionFromRanking(gameType, rankingArray) {
+            const affectionTotal = loadAffection();
+            const affectionToday = loadAffectionToday();
+
+            rankingArray.forEach(item => {
+                const participant = item.name;
+                const rank = item.rank;
+                Object.keys(HEROINES).forEach(hero => {
+                    const lvl = heroineBonusLevel(hero, gameType);
+                    const delta = calcAffectionDelta(lvl, rank);
+
+                    if (!affectionTotal[hero]) affectionTotal[hero] = {};
+                    if (typeof affectionTotal[hero][participant] !== 'number') affectionTotal[hero][participant] = 0;
+                    affectionTotal[hero][participant] += delta;
+
+                    if (!affectionToday[hero]) affectionToday[hero] = {};
+                    if (typeof affectionToday[hero][participant] !== 'number') affectionToday[hero][participant] = 0;
+                    affectionToday[hero][participant] += delta;
+                });
+            });
+
+            saveAffection(affectionTotal);
+            saveAffectionToday(affectionToday);
+        }
+
+        // 遊戲狀態
+        const gameState = {
+            currentRound: 0,
+            currentTurnIndex: 0, // 當前回合的玩家索引
+            currentPlayer: '玩家', // 當前回合的玩家名稱
+            playerCharm: 'B',
+            aiCharm: {
+                '暖男': 'B',
+                '高冷男': 'B',
+                '體育男': 'B'
+            },
+            scores: {
+                '玩家': 0,
+                '暖男': 0,
+                '高冷男': 0,
+                '體育男': 0
+            },
+            totalScores: {
+                '玩家': 0,
+                '暖男': 0,
+                '高冷男': 0,
+                '體育男': 0
+            },
+            combo: {
+                '玩家': 0,
+                '暖男': 0,
+                '高冷男': 0,
+                '體育男': 0
+            },
+            isPlaying: false,
+            activeBeats: [],
+            lastBeatSpawnTime: 0,
+            beatsSpawned: 0,
+            lastFrameTime: 0
+        };
+
+        // DOM 元素
+        const setupPanel = document.getElementById('setupPanel');
+        const gameArea = document.getElementById('gameArea');
+        const resultPanel = document.getElementById('resultPanel');
+        const startButton = document.getElementById('startButton');
+        const nextRoundButton = document.getElementById('nextRoundButton');
+        const restartButton = document.getElementById('restartButton');
+        const stage = document.getElementById('stage');
+        const playerBeatTrack = document.getElementById('playerBeatTrack');
+        const ai1BeatTrack = document.getElementById('ai1BeatTrack');
+        const ai2BeatTrack = document.getElementById('ai2BeatTrack');
+        const ai3BeatTrack = document.getElementById('ai3BeatTrack');
+        const judgmentLine = document.getElementById('judgmentLine');
+        const perfectZone = document.getElementById('perfectZone');
+        const currentTurnDisplay = document.getElementById('currentTurnDisplay');
+        
+        // 獲取當前玩家的節拍軌道
+        function getCurrentBeatTrack() {
+            const currentPlayer = gameState.currentPlayer;
+            if (currentPlayer === '玩家') return playerBeatTrack;
+            if (currentPlayer === '暖男') return ai1BeatTrack;
+            if (currentPlayer === '高冷男') return ai2BeatTrack;
+            if (currentPlayer === '體育男') return ai3BeatTrack;
+            return playerBeatTrack;
+        }
+
+        // 初始化
+        function init() {
+            // 先讀取主選單可能帶入的魅力等級
+            const urlParams = new URLSearchParams(window.location.search);
+            const normalizeLevel = (v) => (v === 'A' || v === 'B' || v === 'C') ? v : null;
+
+            const urlPlayerCharm = normalizeLevel(urlParams.get('playerCharm'));
+            const urlWarmCharm = normalizeLevel(urlParams.get('warmCharm'));
+            const urlColdCharm = normalizeLevel(urlParams.get('coldCharm'));
+            const urlSportCharm = normalizeLevel(urlParams.get('sportCharm'));
+
+            if (urlPlayerCharm) gameState.playerCharm = urlPlayerCharm;
+            if (urlWarmCharm) gameState.aiCharm['暖男'] = urlWarmCharm;
+            if (urlColdCharm) gameState.aiCharm['高冷男'] = urlColdCharm;
+            if (urlSportCharm) gameState.aiCharm['體育男'] = urlSportCharm;
+
+            // 設定判定線位置
+            const stageHeight = stage.offsetHeight;
+            judgmentLine.style.top = GameConfig.JUDGMENT_LINE_Y + 'px';
+            
+            // 設定完美判定區域位置
+            perfectZone.style.top = GameConfig.JUDGMENT_LINE_Y + 'px';
+            perfectZone.style.transform = 'translateY(-50%)';
+            
+            // 設定按鈕事件
+            setupLevelButtons();
+            startButton.addEventListener('click', startGame);
+            nextRoundButton.addEventListener('click', nextRound);
+            restartButton.addEventListener('click', restartGame);
+            
+            // 鍵盤事件
+            document.addEventListener('keydown', handleKeyPress);
+        }
+
+        // 設定等級按鈕
+        function setupLevelButtons() {
+            // 玩家魅力值
+            document.querySelectorAll('.charm-selector .level-button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.charm-selector .level-button').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    gameState.playerCharm = btn.dataset.level;
+                });
+            });
+
+            // 依照 gameState.playerCharm 設定預設選擇
+            document.querySelectorAll('.charm-selector .level-button').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.level === gameState.playerCharm);
+            });
+
+            // AI魅力值
+            document.querySelectorAll('.ai-level-button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const aiName = btn.dataset.ai;
+                    document.querySelectorAll(`.ai-level-button[data-ai="${aiName}"]`).forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    gameState.aiCharm[aiName] = btn.dataset.level;
+                });
+            });
+
+            // 依照 gameState.aiCharm 設定預設選擇
+            ['暖男', '高冷男', '體育男'].forEach(name => {
+                document.querySelectorAll(`.ai-level-button[data-ai="${name}"]`).forEach(btn => {
+                    btn.classList.toggle('selected', btn.dataset.level === gameState.aiCharm[name]);
+                });
+            });
+        }
+
+        // 開始遊戲
+        function startGame() {
+            setupPanel.style.display = 'none';
+            gameArea.style.display = 'block';
+            resultPanel.style.display = 'none';
+            
+            gameState.currentRound = 0;
+            gameState.totalScores = {
+                '玩家': 0,
+                '暖男': 0,
+                '高冷男': 0,
+                '體育男': 0
+            };
+            
+            nextRound();
+        }
+
+        // 下一輪
+        function nextRound() {
+            gameState.currentRound++;
+            gameState.currentTurnIndex = 0;
+            gameState.currentPlayer = PLAYER_ORDER[0];
+            gameState.scores = {
+                '玩家': 0,
+                '暖男': 0,
+                '高冷男': 0,
+                '體育男': 0
+            };
+            gameState.combo = {
+                '玩家': 0,
+                '暖男': 0,
+                '高冷男': 0,
+                '體育男': 0
+            };
+            gameState.activeBeats = [];
+            gameState.lastBeatSpawnTime = 0;
+            gameState.beatsSpawned = 0;
+            gameState.isPlaying = true;
+            gameState.lastFrameTime = performance.now();
+
+            // 更新UI
+            updateScores();
+            updateCombo();
+            updateTotalScores();
+            nextRoundButton.style.display = 'none';
+            updateCurrentTurnDisplay();
+
+            // 清空所有節拍軌道
+            playerBeatTrack.innerHTML = '';
+            ai1BeatTrack.innerHTML = '';
+            ai2BeatTrack.innerHTML = '';
+            ai3BeatTrack.innerHTML = '';
+
+            // 顯示當前玩家的軌道，隱藏其他
+            showCurrentPlayerTrack();
+
+            // 開始遊戲循環
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 顯示當前玩家的軌道（所有軌道都顯示，但只有當前玩家的會生成節拍）
+        function showCurrentPlayerTrack() {
+            // 所有軌道都顯示，但只有當前玩家的軌道會生成節拍
+            // 可以添加視覺效果來突出當前玩家的區域
+            playerBeatTrack.style.opacity = gameState.currentPlayer === '玩家' ? '1' : '0.3';
+            ai1BeatTrack.style.opacity = gameState.currentPlayer === '暖男' ? '1' : '0.3';
+            ai2BeatTrack.style.opacity = gameState.currentPlayer === '高冷男' ? '1' : '0.3';
+            ai3BeatTrack.style.opacity = gameState.currentPlayer === '體育男' ? '1' : '0.3';
+        }
+
+        // 更新當前回合顯示
+        function updateCurrentTurnDisplay() {
+            currentTurnDisplay.textContent = `當前回合：${gameState.currentPlayer}`;
+        }
+
+        // 切換到下一個玩家
+        function nextTurn() {
+            gameState.currentTurnIndex++;
+            if (gameState.currentTurnIndex >= PLAYER_ORDER.length) {
+                // 所有玩家都完成了，進入下一輪
+                endRound();
+                return;
+            }
+            
+            gameState.currentPlayer = PLAYER_ORDER[gameState.currentTurnIndex];
+            gameState.activeBeats = [];
+            gameState.lastBeatSpawnTime = 0;
+            gameState.beatsSpawned = 0;
+            
+            // 清空當前軌道
+            const currentTrack = getCurrentBeatTrack();
+            currentTrack.innerHTML = '';
+            
+            // 顯示當前玩家的軌道
+            updateCurrentTurnDisplay();
+            showCurrentPlayerTrack();
+            updateCombo();
+        }
+
+        // 遊戲循環
+        function gameLoop(currentTime) {
+            if (!gameState.isPlaying) return;
+
+            // 如果沒有時間戳，使用當前時間
+            if (!currentTime) {
+                currentTime = performance.now();
+            }
+
+            // 使用時間戳來控制節拍生成
+            if (gameState.lastBeatSpawnTime === 0) {
+                gameState.lastBeatSpawnTime = currentTime;
+            }
+
+            const isPlayerTurn = gameState.currentPlayer === '玩家';
+
+            // 生成節拍（只在當前玩家的軌道上）
+            if (gameState.beatsSpawned < GameConfig.BEATS_PER_ROUND && 
+                currentTime - gameState.lastBeatSpawnTime >= GameConfig.BEAT_SPAWN_INTERVAL) {
+                spawnBeat();
+                gameState.lastBeatSpawnTime = currentTime;
+            }
+
+            // 更新節拍位置
+            updateBeats();
+
+            // 更新AI（只在AI回合時）
+            if (!isPlayerTurn) {
+                updateAI();
+            }
+
+            // 檢查當前回合是否結束
+            if (gameState.beatsSpawned >= GameConfig.BEATS_PER_ROUND && 
+                gameState.activeBeats.length === 0) {
+                // 當前玩家完成，切換到下一個
+                nextTurn();
+                if (!gameState.isPlaying) return; // 如果所有回合結束，不再繼續
+            }
+
+            gameState.lastFrameTime = currentTime;
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 生成節拍
+        function spawnBeat() {
+            const arrowIndex = Math.floor(Math.random() * 4);
+            const arrow = GameConfig.ARROWS[arrowIndex];
+            const currentTrack = getCurrentBeatTrack();
+            
+            const beat = {
+                id: Date.now() + Math.random(),
+                arrow: arrow,
+                arrowIndex: arrowIndex,
+                y: 0,
+                element: null,
+                player: gameState.currentPlayer
+            };
+
+            // 創建DOM元素
+            const beatElement = document.createElement('div');
+            beatElement.className = 'beat-arrow';
+            beatElement.textContent = arrow;
+            beatElement.style.position = 'absolute';
+            beatElement.style.top = '0px';
+            // 節拍在當前玩家的區域內隨機位置（區域寬度25%，節拍在區域內居中）
+            // 每個區域內可以分成4個位置，對應4個方向鍵
+            const positionInTrack = (arrowIndex * (100 / 4) + (100 / 4 / 2)); // 在區域內的百分比位置
+            beatElement.style.left = `${positionInTrack}%`;
+            beatElement.style.transform = 'translateX(-50%)';
+            
+            currentTrack.appendChild(beatElement);
+
+            beat.element = beatElement;
+            gameState.activeBeats.push(beat);
+            gameState.beatsSpawned++;
+        }
+
+        // 更新節拍位置
+        function updateBeats() {
+            const judgmentY = GameConfig.JUDGMENT_LINE_Y;
+            const currentPlayer = gameState.currentPlayer;
+            const charm = currentPlayer === '玩家' ? gameState.playerCharm : gameState.aiCharm[currentPlayer];
+            const windowSize = GameConfig.CHARM_LEVELS[charm].judgmentWindow;
+            const perfectWindowSize = windowSize / 2; // 完美判定窗口大小
+
+            let hasBeatNearPerfect = false; // 是否有節拍接近完美判定
+
+            // 從後往前遍歷，避免刪除時索引問題
+            for (let i = gameState.activeBeats.length - 1; i >= 0; i--) {
+                const beat = gameState.activeBeats[i];
+                // 只更新當前玩家的節拍
+                if (beat.player !== currentPlayer) continue;
+                
+                if (!beat.element || !beat.element.parentNode) {
+                    gameState.activeBeats.splice(i, 1);
+                    continue;
+                }
+
+                beat.y += GameConfig.BEAT_FALL_SPEED;
+                beat.element.style.top = beat.y + 'px';
+
+                // 檢查是否接近完美判定區域
+                const distance = Math.abs(beat.y - judgmentY);
+                if (distance <= perfectWindowSize + 10) {
+                    hasBeatNearPerfect = true;
+                }
+
+                // 檢查是否超出範圍（未擊中）
+                if (beat.y > judgmentY + windowSize + 50) {
+                    handleMiss(beat);
+                    gameState.activeBeats.splice(i, 1);
+                }
+            }
+
+            // 更新完美判定區域和判定線的視覺效果
+            updatePerfectZoneVisual(hasBeatNearPerfect, perfectWindowSize);
+        }
+
+        // 更新完美判定區域的視覺效果
+        function updatePerfectZoneVisual(hasBeatNearPerfect, perfectWindowSize) {
+            if (hasBeatNearPerfect) {
+                // 顯示綠色完美判定區域
+                perfectZone.style.height = (perfectWindowSize * 2) + 'px';
+                perfectZone.style.opacity = '0.5';
+                judgmentLine.classList.add('perfect-ready');
+            } else {
+                // 隱藏綠色區域
+                perfectZone.style.height = '0px';
+                perfectZone.style.opacity = '0';
+                judgmentLine.classList.remove('perfect-ready');
+            }
+        }
+
+        // 處理按鍵
+        function handleKeyPress(event) {
+            if (!gameState.isPlaying) return;
+            
+            // 只在玩家回合時響應按鍵
+            if (gameState.currentPlayer !== '玩家') return;
+
+            // 阻止默認行為（避免頁面滾動）
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+                event.preventDefault();
+            }
+
+            const pressedArrow = GameConfig.ARROW_KEYS[event.key];
+            if (!pressedArrow) return;
+
+            // 找到最接近判定線的對應節拍（只找當前玩家的節拍）
+            const judgmentY = GameConfig.JUDGMENT_LINE_Y;
+            const windowSize = GameConfig.CHARM_LEVELS[gameState.playerCharm].judgmentWindow;
+            
+            let closestBeat = null;
+            let closestDistance = Infinity;
+
+            gameState.activeBeats.forEach(beat => {
+                // 只處理當前玩家的節拍
+                if (beat.player === '玩家' && beat.arrow === pressedArrow) {
+                    const distance = Math.abs(beat.y - judgmentY);
+                    if (distance <= windowSize + 50 && distance < closestDistance) {
+                        closestDistance = distance;
+                        closestBeat = beat;
+                    }
+                }
+            });
+
+            if (closestBeat) {
+                const distance = Math.abs(closestBeat.y - judgmentY);
+                if (distance <= windowSize / 2) {
+                    handleHit(closestBeat, 'perfect');
+                } else if (distance <= windowSize) {
+                    handleHit(closestBeat, 'good');
+                } else {
+                    handleMiss(closestBeat);
+                }
+            } else {
+                // 按錯鍵，中斷Combo
+                gameState.combo['玩家'] = 0;
+                updateCombo();
+            }
+        }
+
+        // 處理擊中
+        function handleHit(beat, judgment) {
+            const player = beat.player;
+            
+            // 移除節拍
+            const index = gameState.activeBeats.findIndex(b => b.id === beat.id);
+            if (index !== -1) {
+                gameState.activeBeats.splice(index, 1);
+            }
+
+            // 顯示判定效果
+            showJudgment(judgment);
+
+            // 獲取玩家的魅力值
+            const charm = player === '玩家' ? gameState.playerCharm : gameState.aiCharm[player];
+            const config = GameConfig.CHARM_LEVELS[charm];
+
+            // 更新分數
+            const baseScore = GameConfig.SCORES[judgment];
+            const multiplier = config.scoreMultiplier;
+            const comboMultiplier = 1 + (gameState.combo[player] * 0.1 * config.comboMultiplier);
+            const finalScore = Math.floor(baseScore * multiplier * comboMultiplier);
+            
+            gameState.scores[player] += finalScore;
+            gameState.totalScores[player] += finalScore;
+
+            // 更新Combo
+            if (judgment === 'perfect' || judgment === 'good') {
+                gameState.combo[player]++;
+            } else {
+                gameState.combo[player] = 0;
+            }
+
+            // 角色跳舞動畫
+            if (player === '玩家') {
+                const playerDancer = document.getElementById('playerDancer');
+                playerDancer.classList.add('dancing');
+                setTimeout(() => playerDancer.classList.remove('dancing'), 300);
+            } else {
+                const aiIndex = PLAYER_ORDER.indexOf(player) - 1;
+                const aiDancer = document.getElementById(`ai${aiIndex + 1}Dancer`);
+                if (aiDancer) {
+                    aiDancer.classList.add('dancing');
+                    setTimeout(() => aiDancer.classList.remove('dancing'), 300);
+                }
+            }
+
+            // 節拍擊中效果
+            if (beat.element) {
+                beat.element.classList.add('hit');
+                setTimeout(() => {
+                    if (beat.element && beat.element.parentNode) {
+                        beat.element.parentNode.removeChild(beat.element);
+                    }
+                }, 300);
+            }
+
+            updateScores();
+            updateCombo();
+            updateTotalScores();
+        }
+
+        // 處理失誤
+        function handleMiss(beat) {
+            const player = beat.player;
+            gameState.combo[player] = 0;
+            updateCombo();
+
+            if (beat.element && beat.element.parentNode) {
+                beat.element.parentNode.removeChild(beat.element);
+            }
+        }
+
+        // 顯示判定文字
+        function showJudgment(judgment) {
+            const judgmentText = document.createElement('div');
+            judgmentText.className = `judgment-text ${judgment}`;
+            judgmentText.textContent = judgment.toUpperCase();
+            stage.appendChild(judgmentText);
+
+            setTimeout(() => {
+                if (judgmentText.parentNode) {
+                    judgmentText.parentNode.removeChild(judgmentText);
+                }
+            }, 500);
+        }
+
+        // 更新AI（只在AI回合時調用）
+        function updateAI() {
+            const aiName = gameState.currentPlayer;
+            if (aiName === '玩家') return; // 不是AI回合，直接返回
+            
+            const judgmentY = GameConfig.JUDGMENT_LINE_Y;
+            const charm = gameState.aiCharm[aiName];
+            const config = GameConfig.CHARM_LEVELS[charm];
+            const windowSize = config.judgmentWindow;
+            
+            // 只處理當前AI的節拍
+            gameState.activeBeats.forEach(beat => {
+                if (beat.player !== aiName) return;
+                
+                const distance = Math.abs(beat.y - judgmentY);
+                
+                // AI只在節拍接近判定線時才嘗試擊中
+                if (distance <= windowSize + 20) {
+                    const successRate = config.aiSuccessRate.min + 
+                        Math.random() * (config.aiSuccessRate.max - config.aiSuccessRate.min);
+                    
+                    // AI自動判斷是否擊中
+                    if (Math.random() < successRate) {
+                        // AI擊中
+                        let judgment = 'miss';
+                        if (distance <= windowSize / 2) {
+                            judgment = Math.random() < 0.7 ? 'perfect' : 'good';
+                        } else if (distance <= windowSize) {
+                            judgment = Math.random() < 0.5 ? 'good' : 'miss';
+                        }
+
+                        if (judgment !== 'miss') {
+                            handleHit(beat, judgment);
+                        }
+                    }
+                }
+            });
+
+            updateScores();
+            updateTotalScores();
+        }
+
+        // 更新分數顯示
+        function updateScores() {
+            document.getElementById('playerScore').textContent = gameState.scores['玩家'];
+            document.getElementById('ai1Score').textContent = gameState.scores['暖男'];
+            document.getElementById('ai2Score').textContent = gameState.scores['高冷男'];
+            document.getElementById('ai3Score').textContent = gameState.scores['體育男'];
+        }
+
+        // 更新Combo顯示
+        function updateCombo() {
+            const currentCombo = gameState.combo[gameState.currentPlayer] || 0;
+            document.getElementById('comboDisplay').textContent = `Combo: ${currentCombo}`;
+        }
+
+        // 更新總分顯示
+        function updateTotalScores() {
+            document.getElementById('totalPlayerScore').textContent = gameState.totalScores['玩家'];
+            document.getElementById('totalAi1Score').textContent = gameState.totalScores['暖男'];
+            document.getElementById('totalAi2Score').textContent = gameState.totalScores['高冷男'];
+            document.getElementById('totalAi3Score').textContent = gameState.totalScores['體育男'];
+        }
+
+        // 結束本輪
+        function endRound() {
+            gameState.isPlaying = false;
+            
+            // 一輪結束後直接顯示最終排名
+            // 將當前輪次的分數加到總分中
+            Object.keys(gameState.scores).forEach(player => {
+                gameState.totalScores[player] += gameState.scores[player];
+            });
+            
+            showFinalRanking();
+        }
+
+        // 顯示最終排名
+        function showFinalRanking() {
+            gameArea.style.display = 'none';
+            resultPanel.style.display = 'block';
+
+            // 使用當前輪次的分數作為最終分數（因為只有一輪）
+            const finalScores = {};
+            Object.keys(gameState.scores).forEach(player => {
+                finalScores[player] = gameState.scores[player];
+            });
+
+            const ranking = Object.entries(finalScores)
+                .sort((a, b) => b[1] - a[1])
+                .map((entry, index) => ({
+                    name: entry[0],
+                    score: entry[1],
+                    rank: index + 1
+                }));
+
+            const rankingList = document.getElementById('rankingList');
+            rankingList.innerHTML = '';
+
+            // 依據舞蹈（魅力）成績更新女主角好感度
+            applyAffectionFromRanking('charm', ranking);
+
+            ranking.forEach(item => {
+                const rankingItem = document.createElement('div');
+                rankingItem.className = `ranking-item ${getRankClass(item.rank)}`;
+                rankingItem.innerHTML = `
+                    <span>第 ${item.rank} 名: ${item.name}</span>
+                    <span>${item.score} 分</span>
+                `;
+                rankingList.appendChild(rankingItem);
+            });
+
+            // 小遊戲結束數秒後自動回到主頁並前進下一個時段
+            setTimeout(() => {
+                window.location.href = '../index.html?autoNext=1';
+            }, 3000);
+        }
+
+        // 獲取排名樣式類
+        function getRankClass(rank) {
+            if (rank === 1) return 'first';
+            if (rank === 2) return 'second';
+            if (rank === 3) return 'third';
+            return 'fourth';
+        }
+
+        // 重新開始
+        function restartGame() {
+            resultPanel.style.display = 'none';
+            setupPanel.style.display = 'block';
+            gameArea.style.display = 'none';
+            
+            gameState.currentRound = 0;
+            gameState.currentTurnIndex = 0;
+            gameState.currentPlayer = '玩家';
+            gameState.scores = {
+                '玩家': 0,
+                '暖男': 0,
+                '高冷男': 0,
+                '體育男': 0
+            };
+            gameState.totalScores = {
+                '玩家': 0,
+                '暖男': 0,
+                '高冷男': 0,
+                '體育男': 0
+            };
+            gameState.combo = {
+                '玩家': 0,
+                '暖男': 0,
+                '高冷男': 0,
+                '體育男': 0
+            };
+            gameState.isPlaying = false;
+            gameState.activeBeats = [];
+            gameState.lastBeatSpawnTime = 0;
+            gameState.beatsSpawned = 0;
+        }
+
+        // 初始化
+        init();
+    </script>
+</body>
+</html>
