@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>酒吧骰子吹牛（測試版）</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: radial-gradient(circle at top, #9f1239 0%, #1f2933 55%, #020617 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #f9fafb;
+        }
+
+        .main-container {
+            background: rgba(15, 23, 42, 0.96);
+            border-radius: 20px;
+            padding: 22px;
+            max-width: 960px;
+            width: 100%;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(248, 250, 252, 0.08);
+        }
+
+        h1 {
+            text-align: center;
+            color: #f97316;
+            font-size: 2em;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 0.9em;
+            color: #e5e7eb;
+            margin-bottom: 14px;
+        }
+
+        .subtitle span {
+            display: inline-block;
+            margin: 0 4px;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85em;
+            margin-bottom: 10px;
+        }
+
+        .drunk-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .drunk-label {
+            min-width: 70px;
+        }
+
+        .drunk-bar {
+            position: relative;
+            width: 150px;
+            height: 10px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 1);
+            overflow: hidden;
+        }
+
+        .drunk-fill {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 0;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #22c55e 0%, #eab308 50%, #ef4444 100%);
+            transition: width 0.25s;
+        }
+
+        .drunk-value {
+            min-width: 36px;
+            text-align: right;
+        }
+
+        .round-info {
+            text-align: right;
+            font-size: 0.85em;
+            color: #e5e7eb;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 14px;
+            margin-top: 10px;
+        }
+
+        .panel {
+            background: rgba(15, 23, 42, 0.9);
+            border-radius: 14px;
+            padding: 12px 14px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+        }
+
+        .panel-title {
+            font-size: 0.9em;
+            margin-bottom: 8px;
+            color: #fbbf24;
+        }
+
+        .dice-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .dice {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1em;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+        }
+
+        .dice.player {
+            background: linear-gradient(145deg, #22c55e, #16a34a);
+            color: #022c22;
+        }
+
+        .dice.girl {
+            background: linear-gradient(145deg, #f97316, #b91c1c);
+            color: #fef3c7;
+        }
+
+        .dice.hidden {
+            background: rgba(31, 41, 55, 0.9);
+            color: #6b7280;
+        }
+
+        .log {
+            height: 130px;
+            overflow-y: auto;
+            font-size: 0.85em;
+            padding-right: 4px;
+        }
+
+        .log-entry {
+            margin-bottom: 4px;
+        }
+
+        .log-entry span.tag {
+            display: inline-block;
+            min-width: 40px;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .bid-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        select {
+            padding: 4px 8px;
+            border-radius: 8px;
+            border: 1px solid #4b5563;
+            background: rgba(15, 23, 42, 0.9);
+            color: #e5e7eb;
+            font-size: 0.9em;
+        }
+
+        .btn {
+            padding: 6px 10px;
+            font-size: 0.9em;
+            font-weight: bold;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+            color: #111827;
+            box-shadow: 0 6px 16px rgba(248, 113, 113, 0.6);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+            color: #f9fafb;
+            box-shadow: 0 4px 12px rgba(148, 163, 184, 0.6);
+        }
+
+        .btn:hover:enabled {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6);
+        }
+
+        .btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .current-bid {
+            font-size: 0.9em;
+            color: #e5e7eb;
+        }
+
+        .hint {
+            font-size: 0.8em;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1 id="pageTitle">酒吧骰子吹牛（測試版）</h1>
+        <div class="subtitle" id="subtitleText">
+            <span>規則簡化版：只有你和女主角 1 對 1，</span>
+            <span>先讓自己的酒量條滿就輸。</span>
+            <span>本版本採用「1 點當鬼牌」：1 可算成任意點數。</span>
+        </div>
+
+        <div class="status-bar">
+            <div class="drunk-wrapper">
+                <div class="drunk-label">你</div>
+                <div class="drunk-bar">
+                    <div id="playerDrunkFill" class="drunk-fill"></div>
+                </div>
+                <div id="playerDrunkValue" class="drunk-value">0%</div>
+            </div>
+            <div class="drunk-wrapper">
+                <div class="drunk-label">女主角</div>
+                <div class="drunk-bar">
+                    <div id="girlDrunkFill" class="drunk-fill"></div>
+                </div>
+                <div id="girlDrunkValue" class="drunk-value">0%</div>
+            </div>
+            <div class="round-info">
+                第 <span id="roundNumber">1</span> 局
+            </div>
+        </div>
+
+        <div class="board">
+            <div class="panel">
+                <div class="panel-title">骰盅</div>
+                <div class="dice-row" id="playerDiceRow"></div>
+                <div class="dice-row" id="girlDiceRow"></div>
+                <div class="panel-title" style="margin-top: 6px;">紀錄</div>
+                <div id="log" class="log"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">你的動作</div>
+                <div class="current-bid" id="currentBidText">目前還沒有叫牌，請你先開局。</div>
+                <div class="hint" style="margin-top: 4px;">
+                    你可以先「喊牌」預測雙方骰子合計數量，再看女主角要繼續抬牌還是抓你吹牛。
+                </div>
+                <div class="controls" style="margin-top: 10px;">
+                    <div class="bid-row">
+                        <span style="font-size:0.85em;">我喊：</span>
+                        <select id="bidCountSelect"></select>
+                        <span style="font-size:0.85em;">個</span>
+                        <select id="bidFaceSelect"></select>
+                        <button id="btnBid" class="btn btn-primary">喊牌</button>
+                    </div>
+                    <div class="bid-row">
+                        <button id="btnCall" class="btn btn-secondary">抓她吹牛（開骰）</button>
+                    </div>
+                    <div class="bid-row">
+                        <button id="btnNextRound" class="btn btn-primary" disabled>開始下一局</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DICE_PER_PLAYER = 5;
+        const DRUNK_MAX = 100;
+        const DRUNK_STEP_LOSS = 25;
+
+        const logEl = document.getElementById('log');
+        const playerDiceRow = document.getElementById('playerDiceRow');
+        const girlDiceRow = document.getElementById('girlDiceRow');
+        const currentBidText = document.getElementById('currentBidText');
+        const roundNumberEl = document.getElementById('roundNumber');
+
+        const bidCountSelect = document.getElementById('bidCountSelect');
+        const bidFaceSelect = document.getElementById('bidFaceSelect');
+        const btnBid = document.getElementById('btnBid');
+        const btnCall = document.getElementById('btnCall');
+        const btnNextRound = document.getElementById('btnNextRound');
+
+        const playerDrunkFill = document.getElementById('playerDrunkFill');
+        const girlDrunkFill = document.getElementById('girlDrunkFill');
+        const playerDrunkValue = document.getElementById('playerDrunkValue');
+        const girlDrunkValue = document.getElementById('girlDrunkValue');
+
+        const pageTitleEl = document.getElementById('pageTitle');
+        const subtitleEl = document.getElementById('subtitleText');
+
+        // 夜晚約會頁面傳入的參數（若有）
+        const urlParams = new URLSearchParams(window.location.search);
+        const FROM_NIGHT = urlParams.get('fromNight') === '1';
+        const HEROINE_NAME = urlParams.get('heroineName') || '女主角';
+        const HEROINE_CHARM = urlParams.get('heroineCharm') || 'B';
+        const dateAffectionParam = parseInt(urlParams.get('dateAffection') || '', 10);
+        const DATE_AFFECTION_GAIN = Number.isFinite(dateAffectionParam) ? dateAffectionParam : 10;
+
+        const PLAYER_DRUNK_MAX = 100;
+        let girlDrunkMax = 100;
+
+        if (HEROINE_CHARM === 'A') {
+            // 高魅力 / 高冷大姐姐類型：酒量很好
+            girlDrunkMax = 140;
+        } else if (HEROINE_CHARM === 'C') {
+            // 清純型：酒量較差
+            girlDrunkMax = 70;
+        } else {
+            girlDrunkMax = 100;
+        }
+
+        if (FROM_NIGHT) {
+            pageTitleEl.textContent = `酒吧骰子吹牛 - 與「${HEROINE_NAME}」的小對決`;
+            subtitleEl.innerHTML =
+                `<span>今晚你和「${HEROINE_NAME}」在酒吧玩簡單版骰子吹牛，</span>` +
+                `<span>誰先把自己的酒量條灌滿就算輸；</span>` +
+                `<span>她的魅力等級影響酒量上限，高冷大姐姐很能喝，清純少女則比較容易醉。</span>`;
+        }
+
+        let state = {
+            round: 1,
+            playerDrunk: 0,
+            girlDrunk: 0,
+            playerDice: [],
+            girlDice: [],
+            currentBid: null, // { count, face, by: 'player' | 'girl' }
+            turn: 'player',   // 'player' or 'girl'
+            stage: 'awaitBid' // 'awaitBid' | 'awaitResponse' | 'roundOver' | 'matchOver'
+        };
+
+        function initSelects() {
+            bidCountSelect.innerHTML = '';
+            for (let i = 1; i <= DICE_PER_PLAYER * 2; i++) {
+                const opt = document.createElement('option');
+                opt.value = String(i);
+                opt.textContent = String(i);
+                bidCountSelect.appendChild(opt);
+            }
+
+            bidFaceSelect.innerHTML = '';
+            for (let i = 1; i <= 6; i++) {
+                const opt = document.createElement('option');
+                opt.value = String(i);
+                opt.textContent = String(i);
+                bidFaceSelect.appendChild(opt);
+            }
+        }
+
+        function rollDice(n) {
+            const arr = [];
+            for (let i = 0; i < n; i++) {
+                arr.push(Math.floor(Math.random() * 6) + 1);
+            }
+            return arr;
+        }
+
+        function renderDrunkBars() {
+            const p = Math.min(100, Math.round((state.playerDrunk / PLAYER_DRUNK_MAX) * 100));
+            const g = Math.min(100, Math.round((state.girlDrunk / girlDrunkMax) * 100));
+
+            playerDrunkFill.style.width = p + '%';
+            girlDrunkFill.style.width = g + '%';
+
+            playerDrunkValue.textContent = p + '%';
+            girlDrunkValue.textContent = g + '%';
+        }
+
+        function renderDice() {
+            playerDiceRow.innerHTML = '';
+            girlDiceRow.innerHTML = '';
+
+            state.playerDice.forEach(v => {
+                const d = document.createElement('div');
+                d.className = 'dice player';
+                d.textContent = v;
+                playerDiceRow.appendChild(d);
+            });
+
+            // 女主角的骰子在局中是隱藏的，只有在開骰時才顯示
+            state.girlDice.forEach(() => {
+                const d = document.createElement('div');
+                d.className = 'dice girl hidden';
+                d.textContent = '?';
+                girlDiceRow.appendChild(d);
+            });
+        }
+
+        function revealGirlDice() {
+            girlDiceRow.innerHTML = '';
+            state.girlDice.forEach(v => {
+                const d = document.createElement('div');
+                d.className = 'dice girl';
+                d.textContent = v;
+                girlDiceRow.appendChild(d);
+            });
+        }
+
+        function logMessage(tag, text) {
+            const div = document.createElement('div');
+            div.className = 'log-entry';
+            const span = document.createElement('span');
+            span.className = 'tag';
+            span.textContent = tag;
+            div.appendChild(span);
+            const content = document.createElement('span');
+            content.textContent = text;
+            div.appendChild(content);
+            logEl.appendChild(div);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function resetRound() {
+            state.playerDice = rollDice(DICE_PER_PLAYER);
+            state.girlDice = rollDice(DICE_PER_PLAYER);
+            state.currentBid = null;
+            state.turn = 'player';
+            state.stage = 'awaitBid';
+
+            roundNumberEl.textContent = state.round;
+            renderDice();
+            currentBidText.textContent = '目前還沒有叫牌，請你先開局。';
+
+            btnBid.disabled = false;
+            btnCall.disabled = true; // 沒有人叫牌前不能抓
+            btnNextRound.disabled = true;
+
+            logMessage('系統', `第 ${state.round} 局開始，你先搖骰並叫牌。`);
+        }
+
+        function isBidGreater(newBid, oldBid) {
+            if (!oldBid) return true;
+            if (newBid.count > oldBid.count) return true;
+            if (newBid.count === oldBid.count && newBid.face > oldBid.face) return true;
+            return false;
+        }
+
+        function countTotalForFace(face) {
+            const all = state.playerDice.concat(state.girlDice);
+            // 1 點當鬼牌：1 也算進任何叫牌的點數裡
+            return all.filter(v => v === face || v === 1).length;
+        }
+
+        function aiDecideAction() {
+            const bid = state.currentBid;
+            // AI 根據自己看得到的骰子，估計實際數量（1 點當鬼牌）
+            const ownCount = state.girlDice.filter(v => v === bid.face || v === 1).length;
+            const expectedFromPlayer = (DICE_PER_PLAYER / 6) * 2; // 玩家那邊也有目標點數 + 一些 1
+            const estimatedTotal = ownCount + expectedFromPlayer;
+
+            // 若叫牌數明顯超過估計很多，傾向抓
+            if (bid.count > estimatedTotal + 2) {
+                return 'call'; // 抓吹牛
+            }
+
+            // 否則嘗試加碼
+            return 'raise';
+        }
+
+        function aiRaiseBid() {
+            const old = state.currentBid;
+            let newCount = old.count;
+            let newFace = old.face;
+
+            // 優先提高點數，再提高數量
+            if (newFace < 6) {
+                newFace++;
+            } else {
+                newCount++;
+                newFace = 1;
+            }
+
+            // 簡單保護：不要超過所有骰子數量太多
+            if (newCount > DICE_PER_PLAYER * 2) {
+                return null; // 無法合理加碼，改抓
+            }
+
+            return { count: newCount, face: newFace, by: 'girl' };
+        }
+
+        function applyDrunk(who) {
+            if (who === 'player') {
+                state.playerDrunk += DRUNK_STEP_LOSS;
+            } else {
+                state.girlDrunk += DRUNK_STEP_LOSS;
+            }
+            renderDrunkBars();
+        }
+
+        // 夜晚約會相關（只有 FROM_NIGHT 時才會用到）
+        const DAY_KEY = 'forbiddenShow_day';
+        const AFFECTION_KEY = 'forbiddenShow_affection';
+        const AFFECTION_TODAY_KEY = 'forbiddenShow_affection_today';
+        const DATE_CARD_KEY = 'forbiddenShow_dateCards';
+        const NIGHT_DATE_TODAY_KEY = 'forbiddenShow_nightDate_today';
+
+        function loadDay() {
+            const savedDay = parseInt(localStorage.getItem(DAY_KEY), 10);
+            return Number.isNaN(savedDay) || savedDay <= 0 ? 1 : savedDay;
+        }
+
+        function loadAffection() {
+            try {
+                const raw = localStorage.getItem(AFFECTION_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) { }
+            return {};
+        }
+
+        function saveAffection(state) {
+            localStorage.setItem(AFFECTION_KEY, JSON.stringify(state));
+        }
+
+        function loadAffectionToday() {
+            try {
+                const raw = localStorage.getItem(AFFECTION_TODAY_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) { }
+            return {};
+        }
+
+        function saveAffectionToday(state) {
+            localStorage.setItem(AFFECTION_TODAY_KEY, JSON.stringify(state));
+        }
+
+        function loadDateCardsMap() {
+            try {
+                const raw = localStorage.getItem(DATE_CARD_KEY);
+                if (!raw) {
+                    return { '玩家': 0, '暖男': 0, '高冷男': 0, '體育男': 0 };
+                }
+                const parsed = JSON.parse(raw);
+                if (typeof parsed === 'number') {
+                    const mapFromNumber = { '玩家': parsed, '暖男': 0, '高冷男': 0, '體育男': 0 };
+                    localStorage.setItem(DATE_CARD_KEY, JSON.stringify(mapFromNumber));
+                    return mapFromNumber;
+                }
+                const base = { '玩家': 0, '暖男': 0, '高冷男': 0, '體育男': 0 };
+                Object.keys(base).forEach(name => {
+                    if (typeof parsed[name] === 'number' && parsed[name] >= 0) {
+                        base[name] = parsed[name];
+                    }
+                });
+                return base;
+            } catch (e) {
+                return { '玩家': 0, '暖男': 0, '高冷男': 0, '體育男': 0 };
+            }
+        }
+
+        function saveDateCardsMap(map) {
+            localStorage.setItem(DATE_CARD_KEY, JSON.stringify(map));
+        }
+
+        function recordNightResult(win) {
+            if (!FROM_NIGHT) return;
+
+            const dayNow = loadDay();
+
+            // 消耗玩家的約會卡（無論勝敗皆消耗）
+            const cardsMap = loadDateCardsMap();
+            if (typeof cardsMap['玩家'] !== 'number' || cardsMap['玩家'] < 0) {
+                cardsMap['玩家'] = 0;
+            }
+            if (cardsMap['玩家'] > 0) {
+                cardsMap['玩家'] -= 1;
+                if (cardsMap['玩家'] < 0) cardsMap['玩家'] = 0;
+                saveDateCardsMap(cardsMap);
+            }
+
+            // 只有勝利才增加好感度
+            if (win) {
+                const affection = loadAffection();
+                const today = loadAffectionToday();
+
+                if (!affection[HEROINE_NAME]) affection[HEROINE_NAME] = {};
+                if (typeof affection[HEROINE_NAME]['玩家'] !== 'number') affection[HEROINE_NAME]['玩家'] = 0;
+                affection[HEROINE_NAME]['玩家'] += DATE_AFFECTION_GAIN;
+
+                if (!today[HEROINE_NAME]) today[HEROINE_NAME] = {};
+                if (typeof today[HEROINE_NAME]['玩家'] !== 'number') today[HEROINE_NAME]['玩家'] = 0;
+                today[HEROINE_NAME]['玩家'] += DATE_AFFECTION_GAIN;
+
+                saveAffection(affection);
+                saveAffectionToday(today);
+            }
+
+            // 記錄今晚約會紀錄，給日結畫面用（含勝負）
+            const logData = {
+                male: '玩家',
+                heroine: HEROINE_NAME,
+                spot: '酒吧',
+                win: win
+            };
+            localStorage.setItem(NIGHT_DATE_TODAY_KEY, JSON.stringify(logData));
+
+            // 2 秒後：好感達標則先進入親密劇情（CG），否則進入每日結算或結局
+            const INTIMATE_AFFECTION_THRESHOLD = 30;
+            setTimeout(() => {
+                if (win) {
+                    const affection = loadAffection();
+                    const total = (affection[HEROINE_NAME] && typeof affection[HEROINE_NAME]['玩家'] === 'number')
+                        ? affection[HEROINE_NAME]['玩家'] : 0;
+                    if (total >= INTIMATE_AFFECTION_THRESHOLD) {
+                        window.location.href = './intimate-cg.html?heroine=' + encodeURIComponent(HEROINE_NAME) + '&spot=' + encodeURIComponent('酒吧');
+                        return;
+                    }
+                }
+                const nextPage = dayNow >= 14 ? './ending.html' : './day-result.html';
+                window.location.href = nextPage;
+            }, 2000);
+        }
+
+        function checkMatchEnd() {
+            if (state.playerDrunk >= PLAYER_DRUNK_MAX || state.girlDrunk >= girlDrunkMax) {
+                state.stage = 'matchOver';
+                btnBid.disabled = true;
+                btnCall.disabled = true;
+                btnNextRound.disabled = true;
+
+                let win = false;
+
+                const playerOut = state.playerDrunk >= PLAYER_DRUNK_MAX;
+                const girlOut = state.girlDrunk >= girlDrunkMax;
+
+                if (playerOut && girlOut) {
+                    logMessage('系統', '你和女主角都喝掛了，節目組可能得幫你們一起叫車回去……');
+                    currentBidText.textContent = '雙方酒量條都滿了，這場比拼算平手。';
+                    win = false;
+                } else if (playerOut) {
+                    logMessage('系統', '你的酒量條先滿，這回合是女主角獲勝。');
+                    currentBidText.textContent = '你已經喝不太動了，女主角笑著說下次再挑戰她吧。';
+                    win = false;
+                } else {
+                    logMessage('系統', '女主角的酒量條先滿，你成功撐過她。');
+                    currentBidText.textContent = '女主角有點醉醺醺地看著你，似乎對你的酒量印象深刻。';
+                    win = true;
+                }
+
+                if (FROM_NIGHT) {
+                    recordNightResult(win);
+                }
+                return true;
+            }
+            return false;
+        }
+
+        function evaluateCall(caller) {
+            // caller 是抓吹牛的人，目標是檢驗 currentBid 是否「太大」
+            const bid = state.currentBid;
+            const total = countTotalForFace(bid.face);
+            revealGirlDice();
+
+            logMessage('系統', `開骰結果：桌上共有 ${total} 顆「${bid.face}」。`);
+
+            let loser = null;
+            if (total >= bid.count) {
+                // 叫牌其實沒吹牛，抓的人喝
+                loser = caller;
+                logMessage('系統', `實際數量 ≥ 叫牌數，${caller === 'player' ? '你' : '女主角'} 抓錯了，要喝一杯。`);
+            } else {
+                // 叫牌太大，叫牌的人喝
+                loser = bid.by;
+                logMessage('系統', `實際數量 < 叫牌數，${bid.by === 'player' ? '你' : '女主角'} 叫太大，要喝一杯。`);
+            }
+
+            applyDrunk(loser);
+
+            // 檢查整場是否有人酒量條滿
+            if (!checkMatchEnd()) {
+                state.stage = 'roundOver';
+                btnBid.disabled = true;
+                btnCall.disabled = true;
+                btnNextRound.disabled = false;
+                currentBidText.textContent = '這一局結束了，可以開始下一局。';
+            }
+        }
+
+        function aiTurn() {
+            const action = aiDecideAction();
+            if (action === 'call') {
+                logMessage('女主角', '「我不信，你一定在吹牛！開骰！」');
+                evaluateCall('girl');
+            } else {
+                const newBid = aiRaiseBid();
+                if (!newBid) {
+                    // 無法合理加碼，只好抓
+                    logMessage('女主角', '「這也太誇張了吧，我要抓你！」');
+                    evaluateCall('girl');
+                    return;
+                }
+                state.currentBid = newBid;
+                state.turn = 'player';
+                state.stage = 'awaitResponse';
+                currentBidText.textContent =
+                    `女主角喊牌：${newBid.count} 個 ${newBid.face}。你可以選擇繼續抬牌，或是按「抓她吹牛」。`;
+                logMessage('女主角', `「我看至少有 ${newBid.count} 個 ${newBid.face}。」`);
+
+                btnBid.disabled = false;
+                btnCall.disabled = false;
+            }
+        }
+
+        btnBid.addEventListener('click', () => {
+            if (state.stage !== 'awaitBid' && state.stage !== 'awaitResponse') return;
+            if (state.turn !== 'player') return;
+
+            const count = parseInt(bidCountSelect.value, 10);
+            const face = parseInt(bidFaceSelect.value, 10);
+
+            const newBid = { count, face, by: 'player' };
+            if (!isBidGreater(newBid, state.currentBid)) {
+                alert('你的新叫牌必須在「數量」或「點數」上比前一個更大。');
+                return;
+            }
+
+            state.currentBid = newBid;
+            state.turn = 'girl';
+            state.stage = 'awaitResponse';
+
+            logMessage('你', `喊牌：${count} 個 ${face}`);
+            currentBidText.textContent = `你喊牌：${count} 個 ${face}。現在輪到女主角判斷要不要抬牌或抓你。`;
+
+            // 玩家剛喊完，暫時不允許再抓，等女主角動作
+            btnBid.disabled = true;
+            btnCall.disabled = true;
+
+            setTimeout(() => {
+                aiTurn();
+            }, 700);
+        });
+
+        btnCall.addEventListener('click', () => {
+            if (state.stage !== 'awaitResponse') return;
+            if (state.turn !== 'player') return;
+            if (!state.currentBid || state.currentBid.by !== 'girl') {
+                alert('必須要有女主角的上一個叫牌，你才能抓她吹牛。');
+                return;
+            }
+
+            logMessage('你', '「我不信，開骰！」');
+            btnBid.disabled = true;
+            btnCall.disabled = true;
+            evaluateCall('player');
+        });
+
+        btnNextRound.addEventListener('click', () => {
+            if (state.stage !== 'roundOver') return;
+            state.round += 1;
+            resetRound();
+        });
+
+        // 初始化
+        initSelects();
+        renderDrunkBars();
+        resetRound();
+    </script>
+</body>
+</html>
+

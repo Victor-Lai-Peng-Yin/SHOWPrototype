@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>禁忌的Show - 結局</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: radial-gradient(circle at top, #ffe066 0%, #ff6b6b 35%, #2b2d42 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #f8f9fa;
+        }
+
+        .main-container {
+            background: rgba(10, 12, 38, 0.96);
+            border-radius: 24px;
+            padding: 30px;
+            max-width: 820px;
+            width: 100%;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffe066;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #dee2e6;
+            margin-bottom: 18px;
+            font-size: 0.95em;
+        }
+
+        .day-info {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #f8f9fa;
+        }
+
+        .ending-info {
+            margin-top: 10px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.6);
+            font-size: 0.9em;
+            color: #e5e7eb;
+        }
+
+        .heroine-list {
+            margin-top: 18px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .heroine-card {
+            flex: 1;
+            min-width: 160px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.6);
+            display: flex;
+            gap: 8px;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s, background 0.15s;
+        }
+
+        .heroine-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 30px rgba(15, 23, 42, 0.7);
+        }
+
+        .heroine-card.selected {
+            border-color: #ffe066;
+            background: radial-gradient(circle at top, rgba(255, 224, 102, 0.3), rgba(15, 23, 42, 0.9));
+        }
+
+        .heroine-radio {
+            margin-top: 4px;
+        }
+
+        .heroine-name {
+            font-weight: bold;
+            color: #f8f9fa;
+        }
+
+        .heroine-affection {
+            font-size: 0.8em;
+            color: #e5e7eb;
+            margin-top: 2px;
+        }
+
+        .heroine-tier {
+            font-size: 0.8em;
+            margin-top: 4px;
+        }
+
+        .tier-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.75em;
+        }
+
+        .tier-low {
+            background: rgba(148, 163, 184, 0.2);
+            color: #cbd5f5;
+        }
+
+        .tier-mid {
+            background: rgba(52, 211, 153, 0.18);
+            color: #6ee7b7;
+        }
+
+        .tier-high {
+            background: rgba(251, 191, 36, 0.25);
+            color: #facc15;
+        }
+
+        .actions {
+            margin-top: 22px;
+            text-align: center;
+        }
+
+        .primary-button {
+            padding: 12px 32px;
+            font-size: 1.05em;
+            font-weight: bold;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            color: #1f2933;
+            background: linear-gradient(135deg, #ffe066 0%, #ff9f1c 100%);
+            box-shadow: 0 12px 30px rgba(251, 191, 36, 0.6);
+            transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+            margin-bottom: 8px;
+        }
+
+        .primary-button:hover:enabled {
+            transform: translateY(-1px);
+            box-shadow: 0 16px 36px rgba(251, 191, 36, 0.8);
+        }
+
+        .primary-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .secondary-link {
+            margin-top: 4px;
+            font-size: 0.85em;
+            color: #e5e7eb;
+        }
+
+        .secondary-link a {
+            color: #93c5fd;
+            text-decoration: none;
+        }
+
+        .secondary-link a:hover {
+            text-decoration: underline;
+        }
+
+        .result-box {
+            margin-top: 14px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 0.95em;
+        }
+
+        .result-box.success {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.7);
+            color: #a7f3d0;
+        }
+
+        .result-box.fail {
+            background: rgba(248, 113, 113, 0.12);
+            border: 1px solid rgba(248, 113, 113, 0.7);
+            color: #fecaca;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1>最終結局</h1>
+        <div class="subtitle">第 14 天的錄影已經結束，是時候做出你的選擇了。</div>
+
+        <div class="day-info">
+            這 14 天內，你與女主角們的緣分累積如下：
+        </div>
+
+        <div class="ending-info" id="endingInfo">
+            載入中……
+        </div>
+
+        <div class="heroine-list" id="heroineList">
+            <!-- 動態產生可告白對象 -->
+        </div>
+
+        <div class="actions">
+            <button id="confessButton" class="primary-button" disabled>向她告白</button>
+            <div class="secondary-link">
+                <a href="./index.html">回到主頁（可按 D 重置重新挑戰）</a>
+            </div>
+        </div>
+
+        <div id="resultBox" class="result-box" style="display:none;"></div>
+    </div>
+
+    <script>
+        const AFFECTION_KEY = 'forbiddenShow_affection';
+
+        const HEROINES = {
+            '搖滾少女': { charm: 'A', cooking: 'C', stamina: 'C' },
+            '清純少女': { charm: 'C', cooking: 'A', stamina: 'C' },
+            '運動少女': { charm: 'C', cooking: 'C', stamina: 'A' },
+            '高冷大姐姐': { charm: 'B', cooking: 'A', stamina: 'C' },
+            '地雷女': { charm: 'A', cooking: 'C', stamina: 'B' }
+        };
+
+        const PLAYER_NAME = '玩家';
+        // 根據目前加成幅度與 14 天大致上限，設定 3 段好感度等級
+        // 低：0–29、中：30–69、高：70 以上
+        const TIER_CONFIG = [
+            { id: 'low', name: '低', min: 0, max: 29 },
+            { id: 'mid', name: '中', min: 30, max: 69 },
+            { id: 'high', name: '高', min: 70, max: Infinity }
+        ];
+
+        const endingInfoEl = document.getElementById('endingInfo');
+        const heroineListEl = document.getElementById('heroineList');
+        const confessButton = document.getElementById('confessButton');
+        const resultBox = document.getElementById('resultBox');
+
+        function loadAffection() {
+            try {
+                const raw = localStorage.getItem(AFFECTION_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            const base = {};
+            Object.keys(HEROINES).forEach(hero => {
+                base[hero] = { [PLAYER_NAME]: 0 };
+            });
+            return base;
+        }
+
+        function getTierForValue(v) {
+            for (let i = TIER_CONFIG.length - 1; i >= 0; i--) {
+                const t = TIER_CONFIG[i];
+                if (v >= t.min && v <= t.max) return t;
+            }
+            return TIER_CONFIG[0];
+        }
+
+        function initEnding() {
+            const affection = loadAffection();
+            const heroes = Object.keys(HEROINES);
+
+            const heroineStates = heroes.map(name => {
+                const v = affection[name] && typeof affection[name][PLAYER_NAME] === 'number'
+                    ? affection[name][PLAYER_NAME]
+                    : 0;
+                const tier = getTierForValue(v);
+                return { name, value: v, tier };
+            });
+
+            // 找出最高等級
+            let maxTierIndex = -1;
+            heroineStates.forEach(h => {
+                const idx = TIER_CONFIG.findIndex(t => t.id === h.tier.id);
+                if (idx > maxTierIndex) maxTierIndex = idx;
+            });
+
+            if (maxTierIndex < 0) {
+                endingInfoEl.textContent = '目前沒有任何好感度紀錄，這 14 天似乎過得非常平淡……';
+                confessButton.disabled = true;
+                showFailMessage('因為沒有累積到任何好感度，你無法向任何人告白。');
+                renderHeroineCards(heroineStates, null);
+                return;
+            }
+
+            const highestTier = TIER_CONFIG[maxTierIndex];
+            const candidates = heroineStates.filter(h => h.tier.id === highestTier.id && h.value > 0);
+
+            if (highestTier.id !== 'high' || candidates.length === 0) {
+                // 沒有人達到最高好感度等級
+                endingInfoEl.textContent =
+                    '沒有任何女主角達到「高」等級的好感度，節目結束時你只能帶著些許遺憾離開錄影棚。';
+                confessButton.disabled = true;
+                renderHeroineCards(heroineStates, null);
+                showFailMessage('由於沒有女主角達到最高好感度等級，你的告白機會失敗了。');
+                return;
+            }
+
+            endingInfoEl.textContent =
+                `有 ${candidates.length} 位女主角對你的好感度達到「高」等級，你可以從中選擇一位向她告白。`;
+
+            renderHeroineCards(heroineStates, highestTier.id);
+
+            confessButton.disabled = false;
+            confessButton.addEventListener('click', () => {
+                const checked = document.querySelector('input[name="endingHeroine"]:checked');
+                if (!checked) {
+                    alert('請先選擇一位要告白的女主角。');
+                    return;
+                }
+                const targetName = checked.value;
+                showSuccessMessage(targetName);
+                confessButton.disabled = true;
+            });
+        }
+
+        function renderHeroineCards(heroineStates, highlightTierId) {
+            heroineListEl.innerHTML = '';
+            heroineStates.forEach(h => {
+                const card = document.createElement('label');
+                card.className = 'heroine-card';
+
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'endingHeroine';
+                radio.value = h.name;
+                radio.className = 'heroine-radio';
+
+                const box = document.createElement('div');
+
+                const nameEl = document.createElement('div');
+                nameEl.className = 'heroine-name';
+                nameEl.textContent = h.name;
+
+                const affEl = document.createElement('div');
+                affEl.className = 'heroine-affection';
+                affEl.textContent = `對玩家的最終好感度：${h.value}`;
+
+                const tierEl = document.createElement('div');
+                tierEl.className = 'heroine-tier';
+                const badge = document.createElement('span');
+                badge.className = 'tier-badge ' +
+                    (h.tier.id === 'high' ? 'tier-high' : h.tier.id === 'mid' ? 'tier-mid' : 'tier-low');
+                badge.textContent = `好感度等級：${h.tier.name}`;
+                tierEl.appendChild(badge);
+
+                box.appendChild(nameEl);
+                box.appendChild(affEl);
+                box.appendChild(tierEl);
+
+                card.appendChild(radio);
+                card.appendChild(box);
+
+                if (!highlightTierId || h.tier.id !== highlightTierId) {
+                    // 非最高等級的卡片不能被選取
+                    radio.disabled = true;
+                    card.style.opacity = 0.6;
+                } else {
+                    radio.addEventListener('change', () => {
+                        document.querySelectorAll('.heroine-card').forEach(c => c.classList.remove('selected'));
+                        if (radio.checked) {
+                            card.classList.add('selected');
+                        }
+                    });
+                }
+
+                heroineListEl.appendChild(card);
+            });
+        }
+
+        function showFailMessage(reason) {
+            resultBox.style.display = 'block';
+            resultBox.className = 'result-box fail';
+            resultBox.textContent = reason;
+        }
+
+        function showSuccessMessage(name) {
+            resultBox.style.display = 'block';
+            resultBox.className = 'result-box success';
+            resultBox.innerHTML =
+                `恭喜你和「${name}」修成正果！在節目最後，你們牽著手走出錄影棚，開始專屬於兩人的後日談。<br>` +
+                '<button type="button" id="goEndingCgBtn" class="primary-button" style="margin-top: 12px;">進入結局 CG</button>';
+            document.getElementById('goEndingCgBtn').addEventListener('click', () => {
+                window.location.href = './ending-cg.html?heroine=' + encodeURIComponent(name);
+            });
+        }
+
+        initEnding();
+    </script>
+</body>
+</html>
+

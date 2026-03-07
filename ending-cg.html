@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>結局 CG - 禁忌的Show</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(180deg, #0f0a14 0%, #1a0f2e 40%, #0f0a14 100%);
+            min-height: 100vh;
+            color: #f0e6ed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .cg-container {
+            max-width: 640px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .cg-title {
+            font-size: 1.5em;
+            color: #facc15;
+            margin-bottom: 8px;
+            letter-spacing: 0.05em;
+        }
+
+        .cg-subtitle {
+            font-size: 1em;
+            color: #e8b4d4;
+            margin-bottom: 20px;
+        }
+
+        .cg-desc {
+            background: rgba(40, 25, 55, 0.8);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+            line-height: 1.7;
+            border: 1px solid rgba(250, 204, 21, 0.25);
+        }
+
+        .cg-image-wrap {
+            width: 100%;
+            aspect-ratio: 4/3;
+            max-height: 380px;
+            background: linear-gradient(145deg, rgba(80, 40, 90, 0.5), rgba(30, 15, 45, 0.8));
+            border-radius: 16px;
+            border: 1px solid rgba(250, 204, 21, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .cg-placeholder {
+            color: #8a7a88;
+            font-size: 0.95em;
+        }
+
+        .btn-back {
+            padding: 14px 40px;
+            font-size: 1.05em;
+            font-weight: bold;
+            color: #1a0a14;
+            background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(250, 204, 21, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-back:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 28px rgba(250, 204, 21, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="cg-container">
+        <h1 class="cg-title">結局</h1>
+        <p class="cg-subtitle" id="cgSubtitle">與她的結局</p>
+
+        <div class="cg-desc" id="cgDesc">
+            節目結束後，你與「<span id="heroineName">女主角</span>」牽著手走出錄影棚，開始專屬於兩人的後日談。
+        </div>
+
+        <div class="cg-image-wrap">
+            <p class="cg-placeholder">結局 CG（可替換為實際圖片）</p>
+        </div>
+
+        <a href="./index.html" class="btn-back">返回主頁</a>
+    </div>
+
+    <script>
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            let heroine = params.get('heroine') || '';
+
+            if (!heroine) heroine = '女主角';
+
+            document.getElementById('heroineName').textContent = heroine;
+            document.getElementById('cgSubtitle').textContent = '與「' + heroine + '」的結局';
+            document.title = '結局 - ' + heroine + ' - 禁忌的Show';
+        })();
+    </script>
+</body>
+</html>

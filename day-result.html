@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每天結算結果</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .main-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 760px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+
+        .day-info {
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .winner-info {
+            margin-top: 15px;
+            padding: 12px 15px;
+            border-radius: 10px;
+            background: #e7f3ff;
+            border: 1px solid #b6d4fe;
+            color: #184e77;
+            font-size: 0.95em;
+        }
+
+        .winner-info.negative {
+            background: #f8f9fa;
+            border-color: #dee2e6;
+            color: #555;
+        }
+
+        .table-section {
+            margin-top: 20px;
+        }
+
+        .section-title {
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+            margin-top: 6px;
+        }
+
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 6px 8px;
+            text-align: center;
+        }
+
+        th {
+            background: #f1f3f5;
+        }
+
+        .hero-name {
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .highlight-player {
+            background: #fff9db;
+        }
+
+        .table-section {
+            margin-top: 20px;
+        }
+
+        .night-info {
+            margin-top: 15px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            font-size: 0.9em;
+            color: #444;
+        }
+
+        .actions {
+            margin-top: 25px;
+            text-align: center;
+        }
+
+        .primary-button {
+            padding: 12px 28px;
+            font-size: 1.05em;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(102, 126, 234, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .primary-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 22px rgba(102, 126, 234, 0.5);
+        }
+
+        .note-text {
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #777;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1>每天結算結果</h1>
+        <div class="subtitle">根據今天所有女主角的好感度變化，計算每位男生的平均好感度。</div>
+
+        <div class="day-info">
+            今天是第 <span id="dayNumber">1</span> 天（晚上結算）
+        </div>
+
+        <div class="winner-info" id="winnerInfo">
+            計算中...
+        </div>
+
+        <div class="table-section">
+            <div class="section-title">當天女主角好感度（本日累計）</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>女主角</th>
+                        <th>玩家</th>
+                        <th>暖男</th>
+                        <th>高冷男</th>
+                        <th>體育男</th>
+                    </tr>
+                </thead>
+                <tbody id="dailyAffectionBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-section">
+            <div class="section-title">各男生今日總和與平均好感度</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>男生</th>
+                        <th>今日總好感度</th>
+                        <th>平均好感度</th>
+                    </tr>
+                </thead>
+                <tbody id="summaryBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-section">
+            <div class="section-title">今晚約會情況</div>
+            <div id="nightInfo" class="night-info">
+                計算中...
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="primary-button" id="nextDayBtn">開始下一天</button>
+            <div class="note-text">按下按鈕後會進入第 <span id="nextDayNumber">2</span> 天的早上，並清空今日好感度累計。</div>
+        </div>
+    </div>
+
+    <script>
+        const DAY_KEY = 'forbiddenShow_day';
+        const SLOT_KEY = 'forbiddenShow_slot';
+        const AFFECTION_TODAY_KEY = 'forbiddenShow_affection_today';
+        const DATE_CARD_KEY = 'forbiddenShow_dateCards';
+        const LAST_SETTLED_DAY_KEY = 'forbiddenShow_lastSettledDay';
+        const NIGHT_DATE_TODAY_KEY = 'forbiddenShow_nightDate_today';
+
+        const HEROINES = {
+            '搖滾少女': { charm: 'A', cooking: 'C', stamina: 'C' },
+            '清純少女': { charm: 'C', cooking: 'A', stamina: 'C' },
+            '運動少女': { charm: 'C', cooking: 'C', stamina: 'A' },
+            '高冷大姐姐': { charm: 'B', cooking: 'A', stamina: 'C' },
+            '地雷女': { charm: 'A', cooking: 'C', stamina: 'B' }
+        };
+
+        const PLAYERS = ['玩家', '暖男', '高冷男', '體育男'];
+
+        const dayNumberEl = document.getElementById('dayNumber');
+        const nextDayNumberEl = document.getElementById('nextDayNumber');
+        const winnerInfoEl = document.getElementById('winnerInfo');
+        const dailyAffectionBody = document.getElementById('dailyAffectionBody');
+        const summaryBody = document.getElementById('summaryBody');
+        const nightInfoEl = document.getElementById('nightInfo');
+        const nextDayBtn = document.getElementById('nextDayBtn');
+
+        function loadDay() {
+            const savedDay = parseInt(localStorage.getItem(DAY_KEY), 10);
+            return Number.isNaN(savedDay) || savedDay <= 0 ? 1 : savedDay;
+        }
+
+        function loadSlot() {
+            const s = localStorage.getItem(SLOT_KEY);
+            return s === 'morning' || s === 'noon' || s === 'evening' ? s : 'morning';
+        }
+
+        function loadAffectionToday() {
+            try {
+                const raw = localStorage.getItem(AFFECTION_TODAY_KEY);
+                if (raw) return JSON.parse(raw);
+            } catch (e) {}
+            const base = {};
+            PLAYERS.forEach(p => {
+                Object.keys(HEROINES).forEach(hero => {
+                    if (!base[hero]) base[hero] = {};
+                    base[hero][p] = 0;
+                });
+            });
+            return base;
+        }
+
+        function saveAffectionToday(state) {
+            localStorage.setItem(AFFECTION_TODAY_KEY, JSON.stringify(state));
+        }
+
+        function loadDateCardsMap() {
+            try {
+                const raw = localStorage.getItem(DATE_CARD_KEY);
+                if (!raw) {
+                    return { '玩家': 0, '暖男': 0, '高冷男': 0, '體育男': 0 };
+                }
+                const parsed = JSON.parse(raw);
+                if (typeof parsed === 'number') {
+                    const mapFromNumber = { '玩家': parsed, '暖男': 0, '高冷男': 0, '體育男': 0 };
+                    localStorage.setItem(DATE_CARD_KEY, JSON.stringify(mapFromNumber));
+                    return mapFromNumber;
+                }
+                const base = { '玩家': 0, '暖男': 0, '高冷男': 0, '體育男': 0 };
+                Object.keys(base).forEach(name => {
+                    if (typeof parsed[name] === 'number' && parsed[name] >= 0) {
+                        base[name] = parsed[name];
+                    }
+                });
+                return base;
+            } catch (e) {
+                return { '玩家': 0, '暖男': 0, '高冷男': 0, '體育男': 0 };
+            }
+        }
+
+        function saveDateCardsMap(map) {
+            localStorage.setItem(DATE_CARD_KEY, JSON.stringify(map));
+        }
+
+        function renderNightInfo() {
+            try {
+                const raw = localStorage.getItem(NIGHT_DATE_TODAY_KEY);
+                if (!raw) {
+                    nightInfoEl.textContent = '今晚沒有任何人約會。';
+                    return;
+                }
+                const data = JSON.parse(raw);
+                if (!data || !data.male || !data.heroine || !data.spot) {
+                    nightInfoEl.textContent = '今晚沒有有效的約會紀錄。';
+                    return;
+                }
+                const line1 = `今晚由「${data.male}」帶著「${data.heroine}」前往「${data.spot}」約會。`;
+                const win = data.win !== false;
+                const line2 = win
+                    ? `「${data.heroine}」感到非常開心 好感度增加`
+                    : `「${data.heroine}」感到非常無聊 無好感`;
+                nightInfoEl.innerHTML = line1 + '<br>' + line2;
+            } catch (e) {
+                nightInfoEl.textContent = '今晚沒有有效的約會紀錄。';
+            }
+        }
+
+        function settleToday() {
+            const day = loadDay();
+            const slot = loadSlot();
+
+            dayNumberEl.textContent = day;
+            nextDayNumberEl.textContent = day + 1;
+
+            const today = loadAffectionToday();
+            const heroes = Object.keys(HEROINES);
+
+            // 渲染當日好感度表
+            dailyAffectionBody.innerHTML = '';
+            heroes.forEach(hero => {
+                const tr = document.createElement('tr');
+                const nameTd = document.createElement('td');
+                nameTd.textContent = hero;
+                nameTd.className = 'hero-name';
+                tr.appendChild(nameTd);
+                PLAYERS.forEach(p => {
+                    const td = document.createElement('td');
+                    const v = today[hero] && typeof today[hero][p] === 'number' ? today[hero][p] : 0;
+                    td.textContent = v;
+                    tr.appendChild(td);
+                });
+                dailyAffectionBody.appendChild(tr);
+            });
+
+            // 計算各男生總和與平均
+            const heroCount = heroes.length || 1;
+            const summary = {};
+            PLAYERS.forEach(p => {
+                let sum = 0;
+                heroes.forEach(hero => {
+                    const v = today[hero] && typeof today[hero][p] === 'number' ? today[hero][p] : 0;
+                    sum += v;
+                });
+                summary[p] = {
+                    sum,
+                    avg: sum / heroCount
+                };
+            });
+
+            // 找出平均最高者（需要唯一且大於0）
+            let bestPlayer = null;
+            let bestAvg = -Infinity;
+            let tie = false;
+
+            PLAYERS.forEach(p => {
+                const avg = summary[p].avg;
+                if (avg > bestAvg) {
+                    bestAvg = avg;
+                    bestPlayer = p;
+                    tie = false;
+                } else if (avg === bestAvg) {
+                    tie = true;
+                }
+            });
+
+            if (tie) {
+                bestPlayer = null;
+            }
+
+            // 渲染總和 / 平均表
+            summaryBody.innerHTML = '';
+            PLAYERS.forEach(p => {
+                const tr = document.createElement('tr');
+                if (p === '玩家') {
+                    tr.classList.add('highlight-player');
+                }
+                const nameTd = document.createElement('td');
+                nameTd.textContent = p;
+                const sumTd = document.createElement('td');
+                sumTd.textContent = summary[p].sum;
+                const avgTd = document.createElement('td');
+                avgTd.textContent = summary[p].avg.toFixed(2);
+                tr.appendChild(nameTd);
+                tr.appendChild(sumTd);
+                tr.appendChild(avgTd);
+                summaryBody.appendChild(tr);
+            });
+
+            // 判斷是否需要發放約會卡（只在晚上且第一次結算該天時）
+            const lastSettledDayRaw = localStorage.getItem(LAST_SETTLED_DAY_KEY);
+            const alreadySettledThisDay = lastSettledDayRaw === String(day);
+
+            let gainedCardPlayer = false;
+            let cardGivenTo = null;
+
+            if (!alreadySettledThisDay && slot === 'evening' && bestPlayer && bestAvg > 0) {
+                const map = loadDateCardsMap();
+                if (typeof map[bestPlayer] !== 'number' || map[bestPlayer] < 0) {
+                    map[bestPlayer] = 0;
+                }
+                map[bestPlayer] += 1;
+                saveDateCardsMap(map);
+                cardGivenTo = bestPlayer;
+                gainedCardPlayer = bestPlayer === '玩家';
+                localStorage.setItem(LAST_SETTLED_DAY_KEY, String(day));
+            } else if (!alreadySettledThisDay) {
+                // 標記已結算，避免重複觸發
+                localStorage.setItem(LAST_SETTLED_DAY_KEY, String(day));
+            }
+
+            // 更新提示文字
+            if (bestPlayer && bestAvg > 0) {
+                winnerInfoEl.classList.remove('negative');
+                let text = `本日平均好感度最高的是：${bestPlayer}（平均 ${bestAvg.toFixed(2)}）。`;
+
+                if (cardGivenTo) {
+                    text += ` ${cardGivenTo} 獲得 1 張約會卡！`;
+                } else if (alreadySettledThisDay) {
+                    text += '（本日已結算過，約會卡不再重複發放）';
+                }
+
+                if (bestPlayer !== '玩家') {
+                    text += ' 玩家本日並非最高，暫時沒有獲得約會卡。';
+                }
+
+                winnerInfoEl.textContent = text;
+            } else {
+                winnerInfoEl.classList.add('negative');
+                winnerInfoEl.textContent = '今天大家的好感度差不多，沒有明顯的第一名，今天不會發放約會卡。';
+            }
+            renderNightInfo();
+        }
+
+        function goToNextDay() {
+            const day = loadDay();
+            // 進入下一天早上
+            localStorage.setItem(DAY_KEY, String(day + 1));
+            localStorage.setItem(SLOT_KEY, 'morning');
+            // 清空今日好感度累計與今晚約會紀錄
+            localStorage.removeItem(AFFECTION_TODAY_KEY);
+            localStorage.removeItem(NIGHT_DATE_TODAY_KEY);
+            // 回到主頁
+            window.location.href = './index.html';
+        }
+
+        settleToday();
+        nextDayBtn.addEventListener('click', goToNextDay);
+    </script>
+</body>
+</html>
+
