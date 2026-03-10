@@ -156,7 +156,7 @@
             </div>
 
             <div class="attr-row">
-                <div class="attr-label">體力等級（影響乒乓球殺球與判定）</div>
+                <div class="attr-label">體力等級（影響跑酷競賽跳躍與 AI）</div>
                 <div class="level-group" data-attr="stamina">
                     <button class="level-button" data-attr="stamina" data-level="A">A 級</button>
                     <button class="level-button selected" data-attr="stamina" data-level="B">B 級</button>
@@ -182,7 +182,7 @@
                 <li>體育男（運動男）：魅力 <strong>B</strong>、廚藝 <strong>C</strong>、體力 <strong>A</strong></li>
             </ul>
             <div style="margin-top: 6px; font-size: 0.85em; color: #666;">
-                不同小遊戲會只用到相關的能力值（例如：烤肉只用廚藝，乒乓球只用體力，舞蹈秀只用魅力）。
+                不同小遊戲會只用到相關的能力值（例如：烤肉只用廚藝，跑酷競賽只用體力，舞蹈秀只用魅力）。
             </div>
         </div>
 
@@ -236,7 +236,7 @@
             // 把目前設定的玩家能力存回主狀態
             savePlayer(playerState);
 
-            const games = ['bbq', 'dance', 'pingpong'];
+            const games = ['bbq', 'dance', 'runner'];
             const pick = games[Math.floor(Math.random() * games.length)];
 
             // 共用參數（玩家三項能力）
@@ -250,7 +250,7 @@
                 coldCooking: 'C',   // 高冷男
                 sportCooking: 'C',  // 體育男
 
-                // 體力（乒乓球小遊戲用）
+                // 體力（跑酷競賽用）
                 warmStamina: 'C',
                 coldStamina: 'B',
                 sportStamina: 'A',
@@ -267,7 +267,7 @@
             } else if (pick === 'dance') {
                 target = './舞蹈節拍秀/index.html';
             } else {
-                target = './乒乓球小遊戲/index.html';
+                target = './runner-race.html';
             }
 
             window.location.href = target + '?' + params.toString();

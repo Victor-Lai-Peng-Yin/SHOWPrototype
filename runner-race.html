@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>跑酷競賽 - 與競爭對手同場（測試版）</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #f8f9fa;
+        }
+        .main-container {
+            background: rgba(15, 23, 42, 0.96);
+            border-radius: 20px;
+            padding: 22px;
+            max-width: 920px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        h1 { text-align: center; color: #fbbf24; margin-bottom: 6px; font-size: 1.8em; }
+        .subtitle { text-align: center; color: #94a3b8; margin-bottom: 12px; font-size: 0.9em; }
+        .config-panel {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .config-item {
+            background: rgba(30,41,59,0.8);
+            border-radius: 10px;
+            padding: 8px 10px;
+            text-align: center;
+        }
+        .config-item .name { font-weight: bold; margin-bottom: 6px; font-size: 0.9em; }
+        .config-item .name.player { color: #4ade80; }
+        .config-item .name.warm { color: #f97316; }
+        .config-item .name.cold { color: #38bdf8; }
+        .config-item .name.sport { color: #a78bfa; }
+        .level-btns { display: flex; gap: 4px; justify-content: center; }
+        .level-btns button {
+            padding: 4px 8px;
+            font-size: 0.8em;
+            border-radius: 6px;
+            border: 1px solid #475569;
+            background: #334155;
+            color: #e2e8f0;
+            cursor: pointer;
+        }
+        .level-btns button.selected { background: #fbbf24; color: #1e293b; border-color: #fbbf24; }
+        .level-btns button:hover:not(.selected) { background: #475569; }
+        .arena-wrapper {
+            margin-top: 8px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: #0f172a;
+        }
+        canvas { display: block; width: 100%; height: auto; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.85em; }
+        .controls { color: #cbd5e1; }
+        .scoreboard { font-weight: bold; color: #fbbf24; }
+        .bottom-bar { margin-top: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.9em; }
+        .status { color: #e2e8f0; }
+        .btn {
+            padding: 8px 18px;
+            font-size: 0.9em;
+            font-weight: bold;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            color: #1e293b;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+        }
+        .btn:hover:enabled { filter: brightness(1.1); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .result-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.95);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .result-overlay.visible { display: flex; }
+        .result-box {
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 24px 32px;
+            min-width: 320px;
+            border: 1px solid rgba(251,191,36,0.4);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+        }
+        .result-box h2 { text-align: center; color: #fbbf24; margin-bottom: 16px; font-size: 1.4em; }
+        .result-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 1em; }
+        .result-row .rank { color: #94a3b8; margin-right: 12px; }
+        .result-row .name { font-weight: bold; }
+        .result-row .lives { color: #f87171; margin-right: 8px; }
+        .result-row .dist { color: #fbbf24; }
+        .result-btns { display: flex; gap: 10px; margin-top: 16px; }
+        .result-btns .btn { flex: 1; }
+        .btn-secondary { background: rgba(148,163,184,0.4); color: #e2e8f0; }
+        .btn-secondary:hover { background: rgba(148,163,184,0.6); }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <h1>跑酷競賽 - 與競爭對手同場（測試版）</h1>
+        <div class="subtitle">上 / 空格：跳躍　下：蹲下。體力越高跳得越高。賽道 1000m，抵達終點後依距離結算排名。</div>
+
+        <div class="config-panel">
+            <div class="config-item">
+                <div class="name player">玩家</div>
+                <div class="level-btns" data-who="玩家">
+                    <button data-level="A">A</button><button data-level="B" class="selected">B</button><button data-level="C">C</button>
+                </div>
+            </div>
+            <div class="config-item">
+                <div class="name warm">暖男</div>
+                <div class="level-btns" data-who="暖男">
+                    <button data-level="A">A</button><button data-level="B">B</button><button data-level="C" class="selected">C</button>
+                </div>
+            </div>
+            <div class="config-item">
+                <div class="name cold">高冷男</div>
+                <div class="level-btns" data-who="高冷男">
+                    <button data-level="A">A</button><button data-level="B" class="selected">B</button><button data-level="C">C</button>
+                </div>
+            </div>
+            <div class="config-item">
+                <div class="name sport">體育男</div>
+                <div class="level-btns" data-who="體育男">
+                    <button data-level="A" class="selected">A</button><button data-level="B">B</button><button data-level="C">C</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="top-bar">
+            <div class="controls">操作：↑ / 空格 跳躍　↓ 蹲下</div>
+            <div class="scoreboard">距離：<span id="scoreEl">0</span> m</div>
+        </div>
+        <div class="arena-wrapper">
+            <canvas id="gameCanvas" width="900" height="400"></canvas>
+        </div>
+        <div class="bottom-bar">
+            <div class="status" id="statusText">設定好四人體力後，按「開始比賽」。賽道 1000m。</div>
+            <button id="startBtn" class="btn">開始比賽</button>
+        </div>
+
+        <div id="resultOverlay" class="result-overlay">
+            <div class="result-box">
+                <h2>🏁 1000m 結算排名</h2>
+                <div id="resultList"></div>
+                <div class="result-btns">
+                    <button id="resultAgainBtn" class="btn">再玩一次</button>
+                    <button id="resultBackBtn" class="btn btn-secondary">返回主頁</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('scoreEl');
+        const statusText = document.getElementById('statusText');
+        const startBtn = document.getElementById('startBtn');
+
+        const W = canvas.width;
+        const H = canvas.height;
+        const LANE_H = H / 4;
+        const GROUND_Y = (i) => (i + 1) * LANE_H - 20;
+        const RUNNER_X = 120;
+        const RUNNER_W = 28;
+        const RUNNER_H_STAND = 36;
+        const RUNNER_H_DUCK = 22;
+        const GRAVITY = 0.65;
+        const JUMP_POWER = { A: -16, B: -13, C: -10 };
+        const SCROLL_SPEED = 4;
+        const MAX_DISTANCE_M = 1000;
+        const MAX_SCROLL = MAX_DISTANCE_M * 10;
+        const OBSTACLE_W = 42;
+        const OBSTACLE_GROUND_H = 32;
+        const OBSTACLE_CEIL_H = 28;
+        const SPAWN_OFFSET = 220;
+        const SPAWN_DISTANCE_MIN = 62;
+        const SPAWN_DISTANCE_MAX = 95;
+        const AI_REACT_FRAMES = { A: 8, B: 18, C: 32 };
+        const LIVES_MAX = 3;
+        const INVINCIBLE_DIST = 80;
+
+        const NAMES = ['玩家', '暖男', '高冷男', '體育男'];
+        const COLORS = ['#4ade80', '#f97316', '#38bdf8', '#a78bfa'];
+
+        let stamina = { '玩家': 'B', '暖男': 'C', '高冷男': 'B', '體育男': 'A' };
+        (function initStaminaFromUrl() {
+            const p = new URLSearchParams(window.location.search);
+            const norm = v => (v === 'A' || v === 'B' || v === 'C') ? v : null;
+            if (norm(p.get('playerStamina'))) stamina['玩家'] = norm(p.get('playerStamina'));
+            if (norm(p.get('warmStamina'))) stamina['暖男'] = norm(p.get('warmStamina'));
+            if (norm(p.get('coldStamina'))) stamina['高冷男'] = norm(p.get('coldStamina'));
+            if (norm(p.get('sportStamina'))) stamina['體育男'] = norm(p.get('sportStamina'));
+        })();
+        document.querySelectorAll('.level-btns').forEach(grp => {
+            const who = grp.dataset.who;
+            grp.querySelectorAll('button').forEach(btn => {
+                btn.classList.toggle('selected', btn.dataset.level === stamina[who]);
+                btn.addEventListener('click', () => {
+                    stamina[who] = btn.dataset.level;
+                    grp.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                });
+            });
+        });
+
+        let runners = [];
+        let obstacles = [];
+        let scrollX = 0;
+        let lastSpawnScrollX = -400;
+        let nextSpawnDistance = 0;
+        let gameOver = false;
+        let animId = null;
+        const resultOverlay = document.getElementById('resultOverlay');
+        const resultList = document.getElementById('resultList');
+        const resultAgainBtn = document.getElementById('resultAgainBtn');
+        const resultBackBtn = document.getElementById('resultBackBtn');
+
+        const AFFECTION_KEY = 'forbiddenShow_affection';
+        const AFFECTION_TODAY_KEY = 'forbiddenShow_affection_today';
+        const HEROINES = {
+            '搖滾少女': { charm: 'A', cooking: 'C', stamina: 'C' },
+            '清純少女': { charm: 'C', cooking: 'A', stamina: 'C' },
+            '運動少女': { charm: 'C', cooking: 'C', stamina: 'A' },
+            '高冷大姐姐': { charm: 'B', cooking: 'A', stamina: 'C' },
+            '地雷女': { charm: 'A', cooking: 'C', stamina: 'B' }
+        };
+        function loadAffection() {
+            try { const raw = localStorage.getItem(AFFECTION_KEY); if (raw) return JSON.parse(raw); } catch (e) {}
+            const base = {}; const players = ['玩家', '暖男', '高冷男', '體育男'];
+            Object.keys(HEROINES).forEach(hero => { base[hero] = {}; players.forEach(p => { base[hero][p] = 0; }); });
+            return base;
+        }
+        function saveAffection(state) { localStorage.setItem(AFFECTION_KEY, JSON.stringify(state)); }
+        function loadAffectionToday() {
+            try { const raw = localStorage.getItem(AFFECTION_TODAY_KEY); if (raw) return JSON.parse(raw); } catch (e) {}
+            const base = {}; const players = ['玩家', '暖男', '高冷男', '體育男'];
+            Object.keys(HEROINES).forEach(hero => { base[hero] = {}; players.forEach(p => { base[hero][p] = 0; }); });
+            return base;
+        }
+        function saveAffectionToday(state) { localStorage.setItem(AFFECTION_TODAY_KEY, JSON.stringify(state)); }
+        function heroineBonusLevel(heroName, gameType) {
+            const h = HEROINES[heroName]; if (!h) return 'C';
+            if (gameType === 'cooking') return h.cooking; if (gameType === 'charm') return h.charm;
+            return h.stamina;
+        }
+        function calcAffectionDelta(level, rank) {
+            const baseByRank = { 1: 3, 2: 2, 3: 1, 4: 0 }; const base = baseByRank[rank] || 0;
+            const mult = level === 'A' ? 2 : level === 'B' ? 1 : 0.5; return Math.round(base * mult);
+        }
+        function applyAffectionFromRanking(gameType, rankingArray) {
+            const affectionTotal = loadAffection(); const affectionToday = loadAffectionToday();
+            rankingArray.forEach(item => {
+                const participant = item.name; const rank = item.rank;
+                Object.keys(HEROINES).forEach(hero => {
+                    const lvl = heroineBonusLevel(hero, gameType); const delta = calcAffectionDelta(lvl, rank);
+                    if (!affectionTotal[hero]) affectionTotal[hero] = {}; if (typeof affectionTotal[hero][participant] !== 'number') affectionTotal[hero][participant] = 0; affectionTotal[hero][participant] += delta;
+                    if (!affectionToday[hero]) affectionToday[hero] = {}; if (typeof affectionToday[hero][participant] !== 'number') affectionToday[hero][participant] = 0; affectionToday[hero][participant] += delta;
+                });
+            });
+            saveAffection(affectionTotal); saveAffectionToday(affectionToday);
+        }
+
+        function resetGame() {
+            runners = NAMES.map((name, i) => ({
+                name,
+                lane: i,
+                y: GROUND_Y(i) - RUNNER_H_STAND,
+                vy: 0,
+                ducking: false,
+                jumpPressed: false,
+                out: false,
+                lives: LIVES_MAX,
+                invincibleUntil: 0,
+                distanceWhenOut: null,
+                jumpPower: JUMP_POWER[stamina[name]] || JUMP_POWER.B,
+                aiReactFrames: name === '玩家' ? 0 : AI_REACT_FRAMES[stamina[name]] || AI_REACT_FRAMES.B,
+                aiTimer: 0
+            }));
+            obstacles = [];
+            scrollX = 0;
+            lastSpawnScrollX = -400;
+            nextSpawnDistance = (SPAWN_DISTANCE_MIN + Math.random() * (SPAWN_DISTANCE_MAX - SPAWN_DISTANCE_MIN)) * 10;
+            gameOver = false;
+            resultOverlay.classList.remove('visible');
+            scoreEl.textContent = '0';
+        }
+
+        function spawnObstacle() {
+            const offsetRight = W + OBSTACLE_W + SPAWN_OFFSET;
+            const baseX = scrollX + offsetRight;
+            const type1 = Math.random() < 0.5 ? 'ground' : 'ceiling';
+            obstacles.push({ x: baseX, type: type1 });
+            if (Math.random() < 0.45) {
+                const type2 = type1 === 'ground' ? 'ceiling' : 'ground';
+                obstacles.push({ x: baseX + 100 + Math.random() * 140, type: type2 });
+            }
+        }
+
+        function checkCollision(r, obs) {
+            if (r.out || r.lives <= 0) return false;
+            if (scrollX < r.invincibleUntil) return false;
+            const ox = obs.x - scrollX;
+            if (ox + OBSTACLE_W < RUNNER_X - 5 || ox > RUNNER_X + RUNNER_W + 5) return false;
+            const groundY = GROUND_Y(r.lane);
+            const runH = r.ducking ? RUNNER_H_DUCK : RUNNER_H_STAND;
+            const blockTop = groundY - OBSTACLE_GROUND_H;
+            const ceilBottom = LANE_H * r.lane + OBSTACLE_CEIL_H;
+            if (obs.type === 'ground') {
+                if (r.y + runH >= blockTop + 4) return true;
+            } else {
+                if (!r.ducking && r.y <= ceilBottom + 4) return true;
+            }
+            return false;
+        }
+
+        function showResult() {
+            runners.forEach(r => {
+                if (r.distanceWhenOut == null) r.distanceWhenOut = scrollX / 10;
+            });
+            const sorted = [...runners].sort((a, b) => {
+                if (b.lives !== a.lives) return b.lives - a.lives;
+                return (b.distanceWhenOut || 0) - (a.distanceWhenOut || 0);
+            });
+            const rankLabel = ['第 1 名', '第 2 名', '第 3 名', '第 4 名'];
+            resultList.innerHTML = sorted.map((r, i) =>
+                `<div class="result-row"><span class="rank">${rankLabel[i]}</span><span class="name">${r.name}</span><span class="lives">❤ ${r.lives} 條命</span><span class="dist">${Math.floor(r.distanceWhenOut || 0)} m</span></div>`
+            ).join('');
+            const ranking = sorted.map((r, i) => ({ name: r.name, rank: i + 1 }));
+            applyAffectionFromRanking('stamina', ranking);
+            resultOverlay.classList.add('visible');
+        }
+
+        function update() {
+            if (gameOver) return;
+            scrollX += SCROLL_SPEED;
+            const distM = Math.floor(scrollX / 10);
+            scoreEl.textContent = distM + ' / ' + MAX_DISTANCE_M;
+
+            if (scrollX >= MAX_SCROLL) {
+                gameOver = true;
+                runners.forEach(r => { if (!r.out) r.distanceWhenOut = MAX_DISTANCE_M; });
+                startBtn.disabled = false;
+                startBtn.textContent = '再玩一次';
+                showResult();
+                return;
+            }
+
+            if (scrollX - lastSpawnScrollX >= nextSpawnDistance) {
+                spawnObstacle();
+                lastSpawnScrollX = scrollX;
+                nextSpawnDistance = (SPAWN_DISTANCE_MIN + Math.random() * (SPAWN_DISTANCE_MAX - SPAWN_DISTANCE_MIN)) * 10;
+            }
+
+            obstacles = obstacles.filter(obs => obs.x + OBSTACLE_W > scrollX - 50);
+
+            runners.forEach(r => {
+                if (r.out) return;
+                const groundY = GROUND_Y(r.lane);
+
+                if (r.name === '玩家') {
+                    if (r.jumpPressed && r.vy === 0 && r.y >= groundY - RUNNER_H_STAND - 2) {
+                        r.vy = r.jumpPower;
+                    }
+                    r.ducking = keyDown.down;
+                } else {
+                    r.aiTimer++;
+                    const nearestGround = obstacles.find(o => o.type === 'ground' && o.x - scrollX < 220 && o.x - scrollX > RUNNER_X - 60);
+                    const nearestCeil = obstacles.find(o => o.type === 'ceiling' && o.x - scrollX < 220 && o.x - scrollX > RUNNER_X - 80);
+                    if (nearestGround && r.aiTimer >= r.aiReactFrames && r.vy === 0) {
+                        r.vy = r.jumpPower;
+                        r.aiTimer = 0;
+                    }
+                    if (nearestCeil) {
+                        if (nearestCeil.x - scrollX > RUNNER_X - 30) r.ducking = true;
+                    } else {
+                        r.ducking = false;
+                    }
+                    if (nearestCeil && nearestCeil.x - scrollX < RUNNER_X - 50) r.ducking = false;
+                }
+
+                if (!r.ducking) {
+                    r.y += r.vy;
+                    r.vy += GRAVITY;
+                    if (r.y >= groundY - RUNNER_H_STAND) {
+                        r.y = groundY - RUNNER_H_STAND;
+                        r.vy = 0;
+                    }
+                } else {
+                    r.y = groundY - RUNNER_H_DUCK;
+                    r.vy = 0;
+                }
+            });
+
+            obstacles.forEach(obs => {
+                runners.forEach(r => {
+                    if (checkCollision(r, obs)) {
+                        r.lives--;
+                        r.invincibleUntil = scrollX + INVINCIBLE_DIST;
+                        if (r.lives <= 0) {
+                            r.out = true;
+                            r.distanceWhenOut = scrollX / 10;
+                        }
+                    }
+                });
+            });
+        }
+
+        function draw() {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, W, H);
+
+            for (let i = 0; i < 4; i++) {
+                const gy = GROUND_Y(i);
+                ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+                ctx.beginPath();
+                ctx.moveTo(0, gy);
+                ctx.lineTo(W, gy);
+                ctx.stroke();
+                ctx.fillStyle = 'rgba(30,41,59,0.5)';
+                ctx.fillRect(0, gy, W, H - gy);
+            }
+
+            obstacles.forEach(obs => {
+                const ox = obs.x - scrollX;
+                if (ox + OBSTACLE_W < 0) return;
+                ctx.fillStyle = obs.type === 'ground' ? '#78716c' : '#57534e';
+                for (let i = 0; i < 4; i++) {
+                    const gy = GROUND_Y(i);
+                    if (obs.type === 'ground') {
+                        ctx.fillRect(ox, gy - OBSTACLE_GROUND_H, OBSTACLE_W, OBSTACLE_GROUND_H);
+                    } else {
+                        ctx.fillRect(ox, i * LANE_H, OBSTACLE_W, OBSTACLE_CEIL_H);
+                    }
+                }
+            });
+
+            runners.forEach((r, i) => {
+                const gy = GROUND_Y(r.lane);
+                const inv = scrollX < r.invincibleUntil;
+                if (r.out) {
+                    ctx.fillStyle = 'rgba(239,68,68,0.6)';
+                    ctx.font = '14px Microsoft JhengHei';
+                    ctx.fillText('OUT', RUNNER_X - 8, gy - 8);
+                    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+                    ctx.font = '10px Microsoft JhengHei';
+                    ctx.fillText(r.name + ' 0 條命', RUNNER_X - 4, r.y - 4);
+                    return;
+                }
+                const h = r.ducking ? RUNNER_H_DUCK : RUNNER_H_STAND;
+                ctx.fillStyle = inv ? 'rgba(255,255,255,0.5)' : COLORS[i];
+                ctx.fillRect(RUNNER_X, r.y, RUNNER_W, h);
+                ctx.fillStyle = '#fef3c7';
+                ctx.beginPath();
+                ctx.arc(RUNNER_X + RUNNER_W / 2, r.y + 10, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = inv ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.9)';
+                ctx.font = '11px Microsoft JhengHei';
+                ctx.fillText(r.name, RUNNER_X - 4, r.y - 4);
+                ctx.font = '10px Microsoft JhengHei';
+                ctx.fillStyle = '#f87171';
+                ctx.fillText('❤×' + r.lives, RUNNER_X, r.y + h + 12);
+            });
+        }
+
+        const keyDown = { up: false, down: false };
+        document.addEventListener('keydown', e => {
+            if (e.key === 'ArrowUp' || e.key === ' ' || e.key === 'w' || e.key === 'W') {
+                e.preventDefault();
+                keyDown.up = true;
+            }
+            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+                e.preventDefault();
+                keyDown.down = true;
+            }
+        });
+        document.addEventListener('keyup', e => {
+            if (e.key === 'ArrowUp' || e.key === ' ' || e.key === 'w' || e.key === 'W') keyDown.up = false;
+            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keyDown.down = false;
+        });
+
+        function startRace() {
+            startBtn.disabled = true;
+            startBtn.textContent = '比賽中…';
+            resetGame();
+            const player = runners[0];
+            player.jumpPressed = keyDown.up;
+            statusText.textContent = '上/空格跳躍　下蹲下。每人 3 條命，撞到扣 1 命；結算以剩餘生命排名！';
+
+            function loop() {
+                if (player && !player.out) player.jumpPressed = keyDown.up;
+                update();
+                draw();
+                if (!gameOver) animId = requestAnimationFrame(loop);
+            }
+            loop();
+        }
+
+        startBtn.addEventListener('click', startRace);
+
+        resultAgainBtn.addEventListener('click', () => {
+            resultOverlay.classList.remove('visible');
+            startRace();
+        });
+        resultBackBtn.addEventListener('click', () => {
+            window.location.href = './index.html?autoNext=1';
+        });
+    </script>
+</body>
+</html>
